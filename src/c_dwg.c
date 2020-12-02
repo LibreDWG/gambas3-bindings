@@ -1,6 +1,6 @@
 /***************************************************************************
 
-  CDwgDocument.cpp
+  c_dwg.c
 
   (C) 2020 Reini Urban <rurban@cpan.org>
 
@@ -21,9 +21,9 @@
 
 ***************************************************************************/
 
-#define __CDWGDOCUMENT_C
+#define __CDWG_C
 
-#include "CDwgDocument.h"
+#include "c_dwg.h"
 
 #include "gambas.h"
 #include "main.h"
@@ -87,7 +87,7 @@ END_PROPERTY
 
 /****************************************************************************
 
- Translations from Poppler universe to Gambas universe
+ Translations from LibreDWG universe to Gambas universe
 
 ****************************************************************************/
 
@@ -1313,29 +1313,37 @@ GB_DESC DwgDocumentDesc[] =
 {
   GB_DECLARE("DwgDocument", sizeof(CDWGDOCUMENT)),
 
-  // Versions:
+  // Versions
   GB_CONSTANT("R_INVALID","i", R_INVALID),
   GB_CONSTANT("R_1_1","i", R_1_1),	/* MC0.0  MicroCAD Release 1.1 */
   GB_CONSTANT("R_1_2","i", R_1_2),	/* AC1.2  AutoCAD Release 1.2 */
   GB_CONSTANT("R_1_3","i", R_1_3),	/* AC1.3  AutoCAD Release 1.3 */
   GB_CONSTANT("R_1_4","i", R_1_4),	/* AC1.40 AutoCAD Release 1.4 */
+  GB_CONSTANT("R_1_402b","i", R_1_402b),/* AC1.402b AutoCAD Release 1.402b */
   GB_CONSTANT("R_2_0","i", R_2_0),	/* AC1.50 AutoCAD Release 2.0 */
   GB_CONSTANT("R_2_1","i", R_2_1),	/* AC2.10 AutoCAD Release 2.10 */
+  GB_CONSTANT("R_2_21","i", R_2_21),	/* AC2.21 AutoCAD Release 2.21 */
+  GB_CONSTANT("R_2_22","i", R_2_22),	/* AC2.22 AutoCAD Release 2.22 */
   GB_CONSTANT("R_2_4","i", R_2_4),	/* AC1001 AutoCAD Release 2.4 */
   GB_CONSTANT("R_2_5","i", R_2_5),	/* AC1002 AutoCAD Release 2.5 */
   GB_CONSTANT("R_2_6","i", R_2_6),	/* AC1003 AutoCAD Release 2.6 */
   GB_CONSTANT("R_9","i", R_9),		/* AC1004 AutoCAD Release 9 */
   GB_CONSTANT("R_10","i", R_10),	/* AC1006 AutoCAD Release 10 */
+  GB_CONSTANT("R_10c1","i", R_10c1),	/* AC1007 AutoCAD Release 10c1 */
+  GB_CONSTANT("R_10c2","i", R_10c2),	/* AC1008 AutoCAD Release 10c2 */
   GB_CONSTANT("R_11","i", R_11),	/* AC1009 AutoCAD Release 11/12 (LT R1/R2) */
+  GB_CONSTANT("R_12","i", R_12),	/* AC1010 AutoCAD Release 12 */
+  GB_CONSTANT("R_12c1","i", R_12c1),	/* AC1011 AutoCAD Release 12c1 */
   GB_CONSTANT("R_13","i", R_13),	/* AC1012 AutoCAD Release 13 */
   GB_CONSTANT("R_13c3","i", R_13c3),	/* AC1013 AutoCAD Release 13C3 */
   GB_CONSTANT("R_14","i", R_14),	/* AC1014 AutoCAD Release 14 */
   GB_CONSTANT("R_2000","i", R_2000),	/* AC1015 AutoCAD Release 2000 */
-  GB_CONSTANT("R_2004","i", R_2004),	/* AC1018 AutoCAD Release 2004 (includes versions AC1019/0x19 and AC1020/0x1a) */
-  GB_CONSTANT("R_2007","i", R_2007),	/* AC1021 AutoCAD Release 2007 */
-  GB_CONSTANT("R_2010","i", R_2010),	/* AC1024 AutoCAD Release 2010 */
-  GB_CONSTANT("R_2013","i", R_2013),	/* AC1027 AutoCAD Release 2013 */
-  GB_CONSTANT("R_2018","i", R_2018),	/* AC1032 AutoCAD Release 2018 */
+  GB_CONSTANT("R_2004","i", R_2004),	/* AC1018 AutoCAD Release 2004-2006
+                                           (includes versions AC1019/0x19 and AC1020/0x1a) */
+  GB_CONSTANT("R_2007","i", R_2007),	/* AC1021 AutoCAD Release 2007-2009 */
+  GB_CONSTANT("R_2010","i", R_2010),	/* AC1024 AutoCAD Release 2010-2012 */
+  GB_CONSTANT("R_2013","i", R_2013),	/* AC1027 AutoCAD Release 2013-2017 */
+  GB_CONSTANT("R_2018","i", R_2018),	/* AC1032 AutoCAD Release 2018-2021 */
   GB_CONSTANT("R_AFTER","i", R_AFTER)   // also invalid
 
   GB_METHOD("_new", 0, DWGDOCUMENT_new, "[(File)]"),

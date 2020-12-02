@@ -16,7 +16,8 @@ test -z "$GB_SRCDIR" && find_gbsrc ../../../gambas
 test -z "$GB_SRCDIR" && find_gbsrc /usr/src/gambas
 
 cd "$thisdir" || exit
-for f in component.am reconf m4 COPYING
+test -z "$GB_SRCDIR" && (echo "Need GB_SRCDIR argument"; exit)
+for f in component.am reconf m4 COPYING version.m4 missing acinclude.m4 NEWS
 do
 	if [ ! -e $f ]
 	then
