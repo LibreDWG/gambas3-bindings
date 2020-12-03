@@ -21,20 +21,66 @@
 
 ***************************************************************************/
 
-#ifndef __CDWG_H
-#define __CDWG_H
+#ifndef _C_DWG_H
+#define _C_DWG_H
 
 #include "gambas.h"
+#include "main.h"
 
 #include <stdint.h>
-#include <dwg.h>
-#include <dwg_api.h>
 
-#ifndef __CDWG_C
+#ifndef _C_DWG_C
 
-extern GB_DESC DxfDocumentDesc[];
-extern GB_DESC DwgDocumentDesc[];
+#define CLASSDESC(klass) extern GB_DESC klass##_Desc[]
+#define ENTITY_COLLECTION(token) CLASSDESC(token)
 
+CLASSDESC (DwgDocument);
+CLASSDESC (DxfDocument);
+CLASSDESC (SummaryInfo);
+CLASSDESC (Header); // i.e. Database
+ENTITY_COLLECTION (ModelSpace);
+ENTITY_COLLECTION (PaperSpace);
+ENTITY_COLLECTION (Blocks);
+#undef ENTITY_COLLECTION
+
+#define TABLE_COLLECTION(token,key) CLASSDESC(token)
+TABLE_COLLECTION (DimStyles, DIMSTYLE);
+TABLE_COLLECTION (Layers, LAYER);
+TABLE_COLLECTION (Linetypes, LTYPE);
+TABLE_COLLECTION (RegisteredApplications, APPID);
+TABLE_COLLECTION (TextStyles, STYLE);
+TABLE_COLLECTION (UCSs, UCS);
+TABLE_COLLECTION (Viewports, VPORT);
+TABLE_COLLECTION (Views, VIEW);
+#undef TABLE_COLLECTION
+
+#define DICT_COLLECTION(token,key) CLASSDESC(token)
+DICT_COLLECTION (Dictionaries, NAMED_OBJECT_DICTIONARY);
+//DICT_COLLECTION (PlotConfigurations, PLOTSTYLENAME);
+DICT_COLLECTION (Groups, GROUP);
+DICT_COLLECTION (Colors, COLOR);
+DICT_COLLECTION (Layouts, LAYOUT);
+DICT_COLLECTION (MlineStyles, MLINESTYLE);
+DICT_COLLECTION (MLeaderStyles, MLEADERSTYLE);
+DICT_COLLECTION (Materials, MATERIAL);
+DICT_COLLECTION (PlotStyles, PERSUBENTMGR);
+DICT_COLLECTION (DetailViewStyles, DETAILVIEWSTYLE);
+DICT_COLLECTION (SectionViewStyles, SECTIONVIEWSTYLE);
+DICT_COLLECTION (VisualStyles, VISUALSTYLE);
+DICT_COLLECTION (Scales, SCALELIST);
+DICT_COLLECTION (TableStyles, TABLESTYLE);
+DICT_COLLECTION (WipeoutVars, WIPEOUT_VARS);
+DICT_COLLECTION (AssocNetworks, ASSOCNETWORK);
+DICT_COLLECTION (AssocPersSubentManagers, ASSOCPERSSUBENTMANAGER);
+#undef DICT_COLLECTION
+
+#define DWG_OBJECT(token) extern GB_DESC token##_Desc[];
+#define DWG_ENTITY(token) DWG_OBJECT(token)
+#include "objects.inc"
+#undef DWG_OBJECT 
+#undef DWG_ENTITY 
+
+#undef CLASSDESC
 #else
 
 #define THIS ((CDWGDOCUMENT *)_object)
@@ -57,17 +103,82 @@ extern GB_DESC DwgDocumentDesc[];
 #define CDWG_index_get(_i) CDWG_list_get(THIS->index, _i)
 #define CDWG_index_count() CDWG_list_count(THIS->index)
 
-typedef
-	struct {
-		GB_BASE ob;
-		char *buf;
-		int len;
-		Dwg_Data *data;
-		Bit_Chain *stream;
-		bool is_dxf;
-	}
-	CDWGDOCUMENT;
+typedef struct {
+  GB_BASE ob;
+  //char *buf;
+  //int len;
+  Dwg_Data data;
+  bool is_dxf;
+} CDwgDocument;
+typedef CDwgDocument CDxfDocument;
 
-typedef CDWGDOCUMENT CDXFDOCUMENT;
+#define ENTITY_COLLECTION(token)                   \
+  typedef struct {                                 \
+    GB_BASE ob;                                    \
+    /* list? */                                    \
+  } C##token
+
+ENTITY_COLLECTION (ModelSpace);
+ENTITY_COLLECTION (PaperSpace);
+ENTITY_COLLECTION (Blocks);
+
+#define TABLE_COLLECTION(token, object)            \
+  typedef struct {                                 \
+    GB_BASE ob;                                    \
+    /* list? */                                    \
+    Dwg_Object_##object _obj;                      \
+  } C##token
+#define DICT_COLLECTION(token, nodkey, object)     \
+  TABLE_COLLECTION(token, object)
+#define DICT_COLLECTION2(token, object)            \
+  TABLE_COLLECTION(token, object)
+
+TABLE_COLLECTION (DimStyles, DIMSTYLE);
+TABLE_COLLECTION (Layers, LAYER);
+TABLE_COLLECTION (Linetypes, LTYPE);
+TABLE_COLLECTION (RegisteredApplications, APPID);
+TABLE_COLLECTION (TextStyles, STYLE);
+TABLE_COLLECTION (UCSs, UCS);
+TABLE_COLLECTION (Viewports, VPORT);
+TABLE_COLLECTION (Views, VIEW);
+
+DICT_COLLECTION (Dictionaries, NAMED_OBJECT_DICTIONARY, DICTIONARY);
+//DICT_COLLECTION (PlotConfigurations, PLOTSTYLENAME, PLOTSTYLE);
+DICT_COLLECTION2 (Groups, GROUP);
+DICT_COLLECTION (Colors, COLOR, DBCOLOR);
+DICT_COLLECTION2 (Layouts, LAYOUT);
+DICT_COLLECTION2 (MlineStyles, MLINESTYLE);
+DICT_COLLECTION2 (MLeaderStyles, MLEADERSTYLE);
+DICT_COLLECTION2 (Materials, MATERIAL);
+DICT_COLLECTION2 (DetailViewStyles, DETAILVIEWSTYLE);
+DICT_COLLECTION2 (SectionViewStyles, SECTIONVIEWSTYLE);
+DICT_COLLECTION2 (VisualStyles, VISUALSTYLE);
+DICT_COLLECTION (Scales, SCALELIST, SCALE);
+DICT_COLLECTION2 (TableStyles, TABLESTYLE);
+DICT_COLLECTION (WipeoutVars, WIPEOUT_VARS, WIPEOUTVARIABLES);
+DICT_COLLECTION2 (AssocNetworks, ASSOCNETWORK);
+DICT_COLLECTION2 (PersSubentManagers, PERSUBENTMGR);
+DICT_COLLECTION2 (AssocPersSubentManagers, ASSOCPERSSUBENTMANAGER);
+
+#undef ENTITY_COLLECTION
+#undef TABLE_COLLECTION
+#undef DICT_COLLECTION
+#undef DICT_COLLECTION2
+
+#define DWG_OBJECT(token)                       \
+  typedef struct {                              \
+    GB_BASE ob;                                 \
+    Dwg_Object_Object c;                        \
+    Dwg_Object_##token o;                       \
+  } C##token;
+#define DWG_ENTITY(token)                       \
+  typedef struct {                              \
+    GB_BASE ob;                                 \
+    Dwg_Object_Entity c;                        \
+    Dwg_Entity_##token o;                       \
+  } C##token;
+#include "objects.inc"
+#undef DWG_OBJECT
+#undef DWG_ENTITY
 
 #endif

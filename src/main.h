@@ -26,9 +26,52 @@
 
 #include "config.h"
 #include "gambas.h"
+#include <dwg.h>
+#include <dwg_api.h>
 
-#ifndef __MAIN_C
+#ifndef _MAIN_C
 extern GB_INTERFACE GB;
-#endif
+// Collections
+extern GB_CLASS CLASS_DwgDocument;
+extern GB_CLASS CLASS_DxfDocument;
+extern GB_CLASS CLASS_SummaryInfo;
+extern GB_CLASS CLASS_Header;
+extern GB_CLASS CLASS_ModelSpace;
+extern GB_CLASS CLASS_PaperSpace;
+extern GB_CLASS CLASS_Blocks;
+extern GB_CLASS CLASS_DimStyles;
+extern GB_CLASS CLASS_Layers;
+extern GB_CLASS CLASS_Linetypes;
+extern GB_CLASS CLASS_RegisteredApplications;
+extern GB_CLASS CLASS_TextStyles;
+extern GB_CLASS CLASS_UCSs;
+extern GB_CLASS CLASS_Viewports;
+extern GB_CLASS CLASS_Views;
+extern GB_CLASS CLASS_Dictionaries;
+//extern GB_CLASS CLASS_PlotConfigurations;
+extern GB_CLASS CLASS_Groups;
+extern GB_CLASS CLASS_Colors;
+extern GB_CLASS CLASS_Layouts;
+extern GB_CLASS CLASS_MlineStyles;
+extern GB_CLASS CLASS_MLeaderStyles;
+extern GB_CLASS CLASS_Materials;
+//extern GB_CLASS CLASS_PlotStyles;
+extern GB_CLASS CLASS_DetailViewStyles;
+extern GB_CLASS CLASS_SectionViewStyles;
+extern GB_CLASS CLASS_VisualStyles;
+extern GB_CLASS CLASS_Scales;
+extern GB_CLASS CLASS_TableStyles;
+extern GB_CLASS CLASS_WipeoutVars;
+extern GB_CLASS CLASS_AssocNetworks;
+extern GB_CLASS CLASS_PersSubentManagers;
+extern GB_CLASS CLASS_AssocPersSubentManagers;
+
+#define DWG_OBJECT(token) extern GB_CLASS CLASS_##token;
+#define DWG_ENTITY(token) DWG_OBJECT(token)
+#include "objects.inc"
+#undef DWG_OBJECT
+#undef DWG_ENTITY
 
 #endif
+
+#endif /* _MAIN_H */
