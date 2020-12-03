@@ -16,12 +16,12 @@ if test -e ../dwg.i && test -d ../../bindings/gambas ; then
   have_libredwg=yes
   if test -e gambas.h ; then
     hdr=$(realpath gambas.h)
-    srcdir=$(dirname "$hdr")
-    prefix="$srcdir"
+    #srcdir=$(dirname "$hdr")
+    #exec_prefix="/usr/local"
   fi
   AC_DEFINE_UNQUOTED(LIBREDWG_VERSION_0_10_1, 1, LibreDWG version in-tree)
-  AC_SUBST(LIBREDWG_LIBS, "-L../../src/.libs -lredwg")
-  AC_SUBST(LIBREDWG_CFLAGS, "-I../../include")
+  AC_SUBST(LIBREDWG_LIBS, "-L$top_dwg/src -lredwg")
+  AC_SUBST(LIBREDWG_INC, "-I$top_dwg/include")
 else
   libredwg_minver=0.10.1
   GB_COMPONENT_SEARCH(
@@ -36,7 +36,7 @@ else
     pkg-config --atleast-version=$libredwg_minver libredwg
     AC_DEFINE_UNQUOTED(LIBREDWG_VERSION_0_10_1, $((1-$?)), LibreDWG version >= $libredwg_minver)
     AC_SUBST(LIBREDWG_LIBS, "`pkg-config "libredwg >= $libredwg_minver" --libs`")
-    AC_SUBST(LIBREDWG_CFLAGS, "`pkg-config "libredwg >= $libredwg_minver" --cflags`")
+    AC_SUBST(LIBREDWG_INC, "`pkg-config "libredwg >= $libredwg_minver" --cflags`")
   fi
 fi
 

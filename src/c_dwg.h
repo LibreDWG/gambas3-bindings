@@ -105,12 +105,29 @@ DICT_COLLECTION (AssocPersSubentManagers, ASSOCPERSSUBENTMANAGER);
 
 typedef struct {
   GB_BASE ob;
-  //char *buf;
-  //int len;
-  Dwg_Data data;
+  Dwg_Data *dwg;
   bool is_dxf;
 } CDwgDocument;
 typedef CDwgDocument CDxfDocument;
+
+typedef struct {
+  GB_BASE ob;
+  Dwg_Data *dwg;
+} CDwg;
+typedef CDwg CHeader;
+typedef CDwg CSummaryInfo;
+
+typedef union {
+  BITCODE_B b;
+  BITCODE_RC rc;
+  BITCODE_BS bs;
+  BITCODE_BL bl;
+  BITCODE_BLL bll;
+  BITCODE_T t;
+  BITCODE_H h;
+  BITCODE_2RD pt2d;
+  BITCODE_3BD pt3d;
+} CDwg_Variant;
 
 #define ENTITY_COLLECTION(token)                   \
   typedef struct {                                 \
@@ -180,5 +197,14 @@ DICT_COLLECTION2 (AssocPersSubentManagers, ASSOCPERSSUBENTMANAGER);
 #include "objects.inc"
 #undef DWG_OBJECT
 #undef DWG_ENTITY
+
+#define strEQ(s1, s2) !strcmp ((s1), (s2))
+#define strNE(s1, s2) strcmp ((s1), (s2))
+#define strEQc(s1, s2) !strcmp ((s1), s2 "")
+#define strNEc(s1, s2) strcmp ((s1), s2 "")
+
+#define memBEGIN(s1, s2, len) (strlen (s1) >= len && !memcmp (s1, s2, len))
+#define memBEGINc(s1, s2)                                                     \
+  (strlen (s1) >= sizeof (s2 "") - 1 && !memcmp (s1, s2, sizeof (s2 "") - 1))
 
 #endif
