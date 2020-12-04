@@ -36,9 +36,9 @@
 ***********************************************************************/
 
 // returns a field value
-static GB_VARIANT_VALUE dynapi_to_gb_value (const Dwg_Data *dwg,
-                                            const Dwg_DYNAPI_field *f,
-                                            const CDwg_Variant *input)
+static void dynapi_to_gb_value (const Dwg_Data *dwg,
+                                const Dwg_DYNAPI_field *f,
+                                const CDwg_Variant *input)
 {
   if (!f) {
     fprintf (stderr, "Unknown field");
@@ -127,15 +127,121 @@ static GB_VARIANT_VALUE obj_generic_to_gb (dwg_obj_generic *_obj)
   GB.ReturnVariant (NULL);  
 }
 // returns generic Object
-static GB_VARIANT_VALUE obj_to_gb (dwg_obj_generic *_obj)
+static GB_VARIANT_VALUE obj_to_gb (Dwg_Object *obj)
 {
   GB.ReturnVariant (NULL);  
 }
 // returns generic Object
-static GB_VARIANT_VALUE handle_to_gb (dwg_obj_generic *_obj)
+static GB_VARIANT_VALUE handle_to_gb (Dwg_Object_Ref *hdl)
 {
   GB.ReturnVariant (NULL);  
 }
+
+static GB_DATE TIMERLL_to_Data (BITCODE_TIMERLL *date)
+{
+  GB.ReturnVariant (NULL);
+}
+
+static char* TU_to_utf8 (BITCODE_TU *wstr)
+{
+  GB.ReturnString (NULL);
+}
+
+BEGIN_METHOD(DwgDocument_new, GB_STRING file;) /* optional */
+  char *file = STRING(file);
+  CDwgDocument *cdwg = GB.New(GB.FindClass("DwgDocument"), NULL, NULL);
+  dwg_read_file (file, cdwg->dwg);
+  GB.ReturnObject (cdwg);
+END_METHOD
+
+BEGIN_METHOD(DwgDocument_Open, GB_STRING file;)
+  char *file = STRING(file);
+  CDwgDocument *cdwg = GB.New(GB.FindClass("DwgDocument"), NULL, NULL);
+  dwg_read_file (file, cdwg->dwg); // TODO error handling
+  GB.ReturnObject (cdwg);
+END_METHOD
+
+BEGIN_METHOD(DwgDocument_Add, GB_STRING version;) /* optional: is_imperial */
+  char *version = STRING(version);
+  Dwg_Version_Type ver = dwg_version_as (version);
+  GB_CLASS klass = GB.FindClass("DwgDocument");
+  CDwgDocument *cdwg = GB.New(klass, NULL, NULL);
+  if (ver == R_INVALID || ver == R_AFTER) {
+    // Invalid version argument
+    GB.Error(GB_ERR_TYPE);
+    return;
+  }
+  cdwg->dwg = dwg_add_Document (ver, false, 0);
+  GB.ReturnObject (cdwg);
+END_METHOD
+
+#ifndef USE_WRITE
+BEGIN_METHOD(DwgDocument_Save, GB_STRING file;)
+  char *file = STRING(file);
+  dwg_write_file (file, THIS_DWG); // TODO error handling
+END_METHOD
+#endif
+
+BEGIN_METHOD_VOID(DwgDocument_free)
+  dwg_free (THIS_DWG);
+END_METHOD
+
+BEGIN_PROPERTY(ModelSpace_prop)
+  const Dwg_Data *dwg = THIS_DWG;
+  GB.ReturnObject (obj_to_gb (dwg->mspace_block));
+END_PROPERTY
+
+BEGIN_PROPERTY(PaperSpace_prop)
+  const Dwg_Data *dwg = THIS_DWG;
+  GB.ReturnObject (obj_to_gb (dwg->pspace_block));
+END_PROPERTY
+
+BEGIN_PROPERTY(SummaryInfo_prop)
+  const Dwg_Data *dwg = THIS_DWG;
+  CSummaryInfo *csi = GB.New(GB.FindClass("SummaryInfo"), NULL, NULL);
+  csi->dwg = dwg;
+  GB.ReturnObject (csi);
+END_PROPERTY
+
+BEGIN_PROPERTY(Blocks_prop)
+  const Dwg_Data *dwg = THIS_DWG;
+  GB.ReturnObject (obj_generic_to_gb (dwg->block_control));
+END_PROPERTY
+
+BEGIN_PROPERTY(Layers_prop)
+  const Dwg_Data *dwg = THIS_DWG;
+  GB.ReturnObject (obj_generic_to_gb (dwg->layer_control));
+END_PROPERTY
+
+BEGIN_PROPERTY(TextStyles_prop)
+  const Dwg_Data *dwg = THIS_DWG;
+  GB.ReturnObject (obj_generic_to_gb (dwg->style_control));
+END_PROPERTY
+
+BEGIN_PROPERTY(Linetypes_prop)
+  const Dwg_Data *dwg = THIS_DWG;
+  GB.ReturnObject (obj_generic_to_gb (dwg->ltype_control));
+END_PROPERTY
+
+BEGIN_PROPERTY(Regapps_prop)
+  const Dwg_Data *dwg = THIS_DWG;
+  GB.ReturnObject (obj_generic_to_gb (dwg->appid_control));
+END_PROPERTY
+
+BEGIN_PROPERTY(DimStyles_prop)
+  const Dwg_Data *dwg = THIS_DWG;
+  GB.ReturnObject (obj_generic_to_gb (dwg->dimstyle_control));
+END_PROPERTY
+
+BEGIN_PROPERTY(UCSs_prop)
+  const Dwg_Data *dwg = THIS_DWG;
+  GB.ReturnObject (obj_generic_to_gb (dwg->ucs_control));
+END_PROPERTY
+
+BEGIN_PROPERTY(Views_prop)
+  const Dwg_Data *dwg = THIS_DWG;
+  GB.ReturnObject (obj_generic_to_gb (dwg->view_control));
+END_PROPERTY
 
 GB_DESC DwgDocument_Desc[] =
 {
@@ -174,17 +280,33 @@ GB_DESC DwgDocument_Desc[] =
   GB_CONSTANT("R_2018","i", R_2018),	/* AC1032 AutoCAD Release 2018-2021 */
   GB_CONSTANT("R_AFTER","i", R_AFTER),   // also invalid
 
+  GB_METHOD("_new",  "o", DwgDocument_new, "[(File)]"),
+  GB_METHOD("Add",   "o", DwgDocument_Add, "[(Version)]"),
+  GB_METHOD("_free", 0,   DwgDocument_free, 0),
+  GB_METHOD("Open",  "o", DwgDocument_Open,"File"),
+#ifndef USE_WRITE
+  GB_METHOD("Save",  0,   DwgDocument_Save,"(File)"),
+#endif
   /*
-  GB_METHOD("_new",  0, DwgDocument_new, "[(File)]"),
-  GB_METHOD("_free", 0, DwgDocument_free, 0),
-  GB_METHOD("Open",  0, DwgDocument_open,"File"),
-  GB_METHOD("Save",  0, DwgDocument_save,"(File)"),
-  GB_METHOD("SaveAs",0, DwgDocument_saveas,"[File, (Version)]"),
-  GB_METHOD("Export",0, DwgDocument_export,"[File, Extension ]"),
-  GB_METHOD("Close", 0, DwgDocument_close,0),
-
-  GB_PROPERTY_READ("SummaryInfo","SummaryInfo", DwgDocument_SummaryInfo),
+  GB_METHOD("SaveAs",0, DwgDocument_SaveAs,"[File, (Version)]"),
+  GB_METHOD("Export",0, DwgDocument_Export,"[File, Extension ]"),
+  GB_METHOD("Close", 0, DwgDocument_Close, 0), //ignore?
   */
+
+  GB_PROPERTY_READ("ModelSpace","o", ModelSpace_prop),
+  GB_PROPERTY_READ("PaperSpace","o", PaperSpace_prop),
+  GB_PROPERTY_READ("Blocks","o", Blocks_prop),
+  GB_PROPERTY_READ("SummaryInfo","o", SummaryInfo_prop),
+
+  GB_PROPERTY_READ("Layers","o", Blocks_prop),
+  GB_PROPERTY_READ("Linetypes","o", Linetypes_prop),
+  GB_PROPERTY_READ("RegisteredApplications","o", Regapps_prop),
+  GB_PROPERTY_READ("TextStyles","o", TextStyles_prop),
+  GB_PROPERTY_READ("DimStyles","o", DimStyles_prop),
+  GB_PROPERTY_READ("UCSs","o", UCSs_prop),
+  GB_PROPERTY_READ("Viewports","o", Viewports_prop),
+  GB_PROPERTY_READ("Views","o", Views_prop),
+
   GB_END_DECLARE
 };
 
@@ -204,19 +326,65 @@ GB_DESC DxfDocument_Desc[] =
   GB_END_DECLARE
 };
 
+BEGIN_PROPERTY(SummaryInfo_title)
+  const Dwg_Data *dwg = THIS_DWG;
+  const Dwg_SummaryInfo *si = &dwg->summaryinfo;
+  GB.ReturnString ( TU_to_utf8 (si->TITLE));
+END_PROPERTY
+
+BEGIN_PROPERTY(SummaryInfo_subject)
+  const Dwg_Data *dwg = THIS_DWG;
+  const Dwg_SummaryInfo *si = &dwg->summaryinfo;
+  GB.ReturnString ( TU_to_utf8 (si->SUBJECT));
+END_PROPERTY
+
+BEGIN_PROPERTY(SummaryInfo_author)
+  const Dwg_Data *dwg = THIS_DWG;
+  const Dwg_SummaryInfo *si = &dwg->summaryinfo;
+  GB.ReturnString ( TU_to_utf8 (si->AUTHOR));
+END_PROPERTY
+
+BEGIN_PROPERTY(SummaryInfo_keywords)
+  const Dwg_Data *dwg = THIS_DWG;
+  const Dwg_SummaryInfo *si = &dwg->summaryinfo;
+  GB.ReturnString ( TU_to_utf8 (si->KEYWORDS));
+END_PROPERTY
+
+BEGIN_PROPERTY(SummaryInfo_comments)
+  const Dwg_Data *dwg = THIS_DWG;
+  const Dwg_SummaryInfo *si = &dwg->summaryinfo;
+  GB.ReturnString ( TU_to_utf8 (si->COMMENTS));
+END_PROPERTY
+
+BEGIN_PROPERTY(SummaryInfo_tdindwg)
+  const Dwg_Data *dwg = THIS_DWG;
+  const Dwg_SummaryInfo *si = &dwg->summaryinfo;
+  GB.ReturnDate ( TIMERLL_to_Data (si->TDINDWG) );
+END_PROPERTY
+
+BEGIN_PROPERTY(SummaryInfo_tdcreate)
+  const Dwg_Data *dwg = THIS_DWG;
+  const Dwg_SummaryInfo *si = &dwg->summaryinfo;
+  GB.ReturnDate ( TIMERLL_to_Data (si->tdcreate) );
+END_PROPERTY
+
+BEGIN_PROPERTY(SummaryInfo_tdupdate)
+  const Dwg_Data *dwg = THIS_DWG;
+  const Dwg_SummaryInfo *si = &dwg->summaryinfo;
+  GB.ReturnDate ( TIMERLL_to_Data (si->TDUPDATE) );
+END_PROPERTY
+
 GB_DESC SummaryInfo_Desc[] =
 {
    GB_DECLARE("SummaryInfo", 0), GB_NOT_CREATABLE(),
-   /*
    GB_PROPERTY_READ("Title","s",SummaryInfo_title),
    GB_PROPERTY_READ("Author","s",SummaryInfo_author),
    GB_PROPERTY_READ("Subject","s",SummaryInfo_subject),
    GB_PROPERTY_READ("Keywords","s",SummaryInfo_keywords),
    GB_PROPERTY_READ("Comments","s",SummaryInfo_comments),
-   //GB_PROPERTY_READ("??Date","d",SummaryInfo_tdindwg),
+   GB_PROPERTY_READ("TimeInDwg","d",SummaryInfo_tdindwg),
    GB_PROPERTY_READ("CreationDate","d",SummaryInfo_tdcreate),
    GB_PROPERTY_READ("ModificationDate","d",SummaryInfo_tdupdate),
-   */
    GB_END_DECLARE
 };
 
@@ -225,7 +393,7 @@ GB_DESC SummaryInfo_Desc[] =
 BEGIN_METHOD(Header_get, GB_STRING name;)
 
   char *key = GB.ToZeroString(ARG(name));
-  const Dwg_Data *dwg = DWG;
+  const Dwg_Data *dwg = THIS_DWG;
   CDwg_Variant value;
   Dwg_DYNAPI_field f;
   GB_VARIANT retval;
@@ -247,7 +415,7 @@ BEGIN_METHOD(Header_put, GB_VARIANT value, GB_STRING name;)
 
   char *key = GB.ToZeroString(ARG(name));
   GB_VALUE *value = (GB_VALUE *)ARG(value);
-  const Dwg_Data *dwg = DWG;
+  const Dwg_Data *dwg = THIS_DWG;
   CDwg_Variant out;
 
   if (!gb_to_dynapi_value (dwg, value, &out))
@@ -292,7 +460,7 @@ END_METHOD
   
 BEGIN_PROPERTY(Entities_Count)
 
-  const Dwg_Data *dwg = DWG;
+  const Dwg_Data *dwg = THIS_DWG;
   // FIXME number of entities in this collection
   GB.ReturnInt(dwg->num_objects);
 
@@ -325,7 +493,7 @@ END_PROPERTY
 
 BEGIN_METHOD(Objects_get, GB_INTEGER index;)
 
-  const Dwg_Data *dwg = DWG;
+  const Dwg_Data *dwg = THIS_DWG;
   int index = VARG(index);
   Dwg_Object *obj;
   if (index < 0 || index >= dwg->num_objects) 
@@ -446,7 +614,7 @@ GB_DESC token##_Desc[] =                                      \
     GB_METHOD("_next", "o",Dict_next, NULL),                  \
     GB_END_DECLARE                                            \
   }
-#define DICT_COLLECTION2(token, obj) DICT_COLLECTION(token, obj)
+#define DICT_COLLECTION2(token, obj) DICT_COLLECTION(token, obj, obj)
 
 DICT_COLLECTION (Dictionaries, NAMED_OBJECT_DICTIONARY, DICTIONARY);
 //DICT_COLLECTION (PlotConfigurations, PLOTSTYLENAME, PLOTSTYLE);
@@ -485,7 +653,7 @@ BEGIN_METHOD(Object_get, GB_STRING name;)
 
   const char *key = STRING(name);
   const dwg_ent_generic *obj = VARG(_object);
-  const Dwg_Data *dwg = DWG;
+  const Dwg_Data *dwg = THIS_DWG;
   CDwg_Variant value;
   Dwg_DYNAPI_field f;
   GB_VARIANT retval;
@@ -505,7 +673,7 @@ BEGIN_METHOD(Object_set, GB_STRING name; GB_VARIANT value;)
   const char *key = STRING(name);
   const dwg_ent_generic *obj = VARG(_object);
   GB_VALUE *value = (GB_VALUE *)ARG(value);
-  const Dwg_Data *dwg = DWG;
+  const Dwg_Data *dwg = THIS_DWG;
   CDwg_Variant out;
 
   if (!gb_to_dynapi_value (dwg, value, &out))

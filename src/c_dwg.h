@@ -83,8 +83,9 @@ DICT_COLLECTION (AssocPersSubentManagers, ASSOCPERSSUBENTMANAGER);
 #undef CLASSDESC
 #else
 
-#define THIS ((CDWGDOCUMENT *)_object)
-#define THIS_DXF ((CDXFDOCUMENT *)_object)
+#define THIS ((CDwgDocument *)_object)
+#define THIS_DWG THIS->dwg
+#define THIS_DXF ((CDxfDocument *)_object)
 
 #endif
 
