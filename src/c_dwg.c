@@ -122,19 +122,38 @@ static bool gb_to_dynapi_value (const Dwg_Data *dwg,
 }
 
 // returns generic Object
-static GB_VARIANT_VALUE obj_generic_to_gb (dwg_obj_generic *_obj)
+static CDwgObject* obj_to_gb (Dwg_Object *obj)
 {
-  GB.ReturnVariant (NULL);  
+  GB_CLASS klass = GB.FindClass(obj->dxfname);
+  CDwgObject *gb = (CDICTIONARY *)GB.New(klass, NULL, NULL);
+  gb->dwg = obj->parent;
+  gb->obj = obj;
+  if (obj->supertype == DWG_SUPERTYPE_ENTITY)
+    gb->common = (Dwg_Object_Object*)obj->tio.entity;
+  else
+    gb->common = obj->tio.object;
+  return gb;
 }
+
 // returns generic Object
-static GB_VARIANT_VALUE obj_to_gb (Dwg_Object *obj)
+static CDwgObject* obj_generic_to_gb (void *_obj)
 {
-  GB.ReturnVariant (NULL);  
+  int error;
+  Dwg_Object *obj = dwg_obj_generic_to_object (_obj, &error);
+  if (error)
+    return NULL;
+  else
+    return obj_to_gb (obj);
 }
+
 // returns generic Object
-static GB_VARIANT_VALUE handle_to_gb (Dwg_Object_Ref *hdl)
+static CDwgObject* handle_to_gb (Dwg_Data *dwg, Dwg_Object_Ref *hdl)
 {
-  GB.ReturnVariant (NULL);  
+  Dwg_Object *obj = dwg_ref_object (dwg, hdl);
+  if (!obj)
+    return NULL;
+  else
+    return obj_to_gb (obj);
 }
 
 static GB_DATE TIMERLL_to_Data (BITCODE_TIMERLL *date)
@@ -197,7 +216,7 @@ BEGIN_PROPERTY(PaperSpace_prop)
 END_PROPERTY
 
 BEGIN_PROPERTY(SummaryInfo_prop)
-  const Dwg_Data *dwg = THIS_DWG;
+  Dwg_Data *dwg = THIS_DWG;
   CSummaryInfo *csi = GB.New(GB.FindClass("SummaryInfo"), NULL, NULL);
   csi->dwg = dwg;
   GB.ReturnObject (csi);
@@ -562,7 +581,7 @@ BEGIN_METHOD(Table_get_by_index, GB_INTEGER index;)
       GB.Error (GB_ERR_BOUND);
       return;
     }
-  GB.ReturnObject (handle_to_gb (_ctrl->entries[index]);
+GB.ReturnObject (handle_to_gb (THIS_DWG, _ctrl->entries[index]);
 END_METHOD
 
 BEGIN_METHOD(Table_get_by_name, GB_STRING name;)
@@ -570,7 +589,7 @@ BEGIN_METHOD(Table_get_by_name, GB_STRING name;)
   for (unsigned i = 0; i < _ctrl->num_entries; i++)
     {
       if (strEQ (_ctrl->entries[i]->name, name)) {
-        GB.ReturnObject (handle_to_gb (_ctrl->entries[i]);
+        GB.ReturnObject (handle_to_gb (THIS_DWG, _ctrl->entries[i]);
         return;
       }
     }

@@ -215,6 +215,8 @@ DICT_COLLECTION2 (AssocPersSubentManagers, ASSOCPERSSUBENTMANAGER);
 #undef DWG_OBJECT
 #undef DWG_ENTITY
 
+typedef CDICTIONARY CDwgObject;
+
 #define strEQ(s1, s2) !strcmp ((s1), (s2))
 #define strNE(s1, s2) strcmp ((s1), (s2))
 #define strEQc(s1, s2) !strcmp ((s1), s2 "")
