@@ -24,10 +24,12 @@
 #ifndef __MAIN_H
 #define __MAIN_H
 
-#include "config.h"
-#include "gambas.h"
 #include <dwg.h>
 #include <dwg_api.h>
+
+#include "config.h"
+#include "gb_common.h"
+#include "gambas.h"
 
 #ifndef _MAIN_C
 extern GB_INTERFACE GB;

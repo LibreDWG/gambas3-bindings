@@ -131,23 +131,36 @@ typedef union {
 #define ENTITY_COLLECTION(token)                   \
   typedef struct {                                 \
     GB_BASE ob;                                    \
-    /* list? */                                    \
+    Dwg_Data *dwg;                                 \
+    /* list */                                     \
+    Dwg_Object *curr;                              \
   } C##token
 
 ENTITY_COLLECTION (ModelSpace);
 ENTITY_COLLECTION (PaperSpace);
 ENTITY_COLLECTION (Blocks);
 
+// get, put. next
 #define TABLE_COLLECTION(token, object)            \
   typedef struct {                                 \
     GB_BASE ob;                                    \
-    /* list? */                                    \
-    Dwg_Object_##object _obj;                      \
+    Dwg_Data *dwg;                                 \
+    Dwg_Object *ctrl;                              \
+    /* list or array? */                           \
+    Dwg_Object_##object *_ctrl;                    \
   } C##token
+// The nodkey: "ACAD_"#nodkey
 #define DICT_COLLECTION(token, nodkey, object)     \
-  TABLE_COLLECTION(token, object)
+  typedef struct {                                 \
+    GB_BASE ob;                                    \
+    Dwg_Data *dwg;                                 \
+    Dwg_Object *dictobj;                           \
+    const char *nodkey;                            \
+    /* map */                                      \
+    Dwg_Object_##object *_obj;                     \
+  } C##token
 #define DICT_COLLECTION2(token, object)            \
-  TABLE_COLLECTION(token, object)
+  DICT_COLLECTION(token, object, object)
 
 TABLE_COLLECTION (DimStyles, DIMSTYLE);
 TABLE_COLLECTION (Layers, LAYER);
@@ -184,14 +197,18 @@ DICT_COLLECTION2 (AssocPersSubentManagers, ASSOCPERSSUBENTMANAGER);
 #define DWG_OBJECT(token)                       \
   typedef struct {                              \
     GB_BASE ob;                                 \
-    Dwg_Object_Object c;                        \
-    Dwg_Object_##token o;                       \
+    Dwg_Data *dwg;                              \
+    Dwg_Object *obj;                            \
+    Dwg_Object_Object *common;                  \
+    Dwg_Object_##token *_obj;                   \
   } C##token;
 #define DWG_ENTITY(token)                       \
   typedef struct {                              \
     GB_BASE ob;                                 \
-    Dwg_Object_Entity c;                        \
-    Dwg_Entity_##token o;                       \
+    Dwg_Data *dwg;                              \
+    Dwg_Object *obj;                            \
+    Dwg_Object_Entity *common;                  \
+    Dwg_Entity_##token *_obj;                   \
   } C##token;
 #include "objects.inc"
 #undef DWG_OBJECT
