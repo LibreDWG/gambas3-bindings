@@ -125,8 +125,7 @@ typedef union {
   BITCODE_BLL bll;
   BITCODE_T t;
   BITCODE_H h;
-  BITCODE_2RD pt2d;
-  BITCODE_3BD pt3d;
+  BITCODE_3BD pt;
 } CDwg_Variant;
 
 #define ENTITY_COLLECTION(token)                   \

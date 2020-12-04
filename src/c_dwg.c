@@ -24,6 +24,7 @@
 #define _C_DWG_C
 
 #include "c_dwg.h"
+//#include "gb_common.h"
 #include <stdbool.h>
 
 //#include <stdio.h>
@@ -34,74 +35,80 @@
  Gambas Interface
 ***********************************************************************/
 
-// <main/gbx/gbx_api.h>
-void GB_ArrayNew(GB_ARRAY *array, int type, int size);
-
-static void dynapi_to_gb_value (const Dwg_Data *dwg,
-                                const Dwg_DYNAPI_field *f,
-                                const CDwg_Variant *input,
-                                GB_VARIANT *output)
+static GB_VARIANT_VALUE dynapi_to_gb_value (const Dwg_Data *dwg,
+                                            const Dwg_DYNAPI_field *f,
+                                            const CDwg_Variant *input)
 {
-  GB_VARIANT_VALUE value;
-  output->type = GB_T_VARIANT;
-  output->value = value;
+  if (!f) {
+    fprintf (stderr, "Unknown field");
+    GB.Error(GB_ERR_BOUND);
+    GB.ReturnVariant (NULL);
+    return;
+  }
   switch (f->size) {
   case 1:
     if (strEQc (f->type, "B")) {
-      value->type = GB_T_BOOLEAN;
-      value->value._boolean = input->b;
-      break;
+      GB.ReturnBoolean (input->b);
+      return;
     }
     if (strEQc (f->type, "RC") || strEQc (f->type, "BB")) {
-      value->type = GB_T_BYTE;
-      value->value._byte = input->rc;
-      break;
+      //GB.ReturnByte (input->rc);
+      GB.ReturnInteger (input->rc);
+      return;
     }
   case 2:
     if (strEQc (f->type, "BS") || strEQc (f->type, "RS")) {
-      value->type = GB_T_SHORT;
-      value->value._single = input->bs;
-      break;
+      //GB.ReturnShort (input->bs);
+      GB.ReturnInteger (input->bs);
+      return;
     }
   case 4:
     if (strEQc (f->type, "BL") || strEQc (f->type, "RL")) {
-      value->type = GB_T_INTEGER;
-      value->value._integer = input->bl;
-      break;
+      GB.ReturnInteger (input->bl);
+      return;
     }
   case 8:
     if (strEQc (f->type, "BLL") || strEQc (f->type, "RLL")) {
-      value->type = GB_T_LONG;
-      value->value._long = input->bll;
-      break;
+      GB.ReturnLong (input->bll);
+      return;
     }
+    // FIXME TF -> Array_Byte_FromString
     if (*f->type == 'T') {
-      value->type = GB_T_CSTRING;
-      // FIXME TF -> Array_Byte_FromString
-      value->value._string = input->t;
-      break;
+      GB.ReturnString (input->t);
+      //value->type = GB_T_CSTRING;
+      //value->value._string = input->t;
+      return;
     }
     if (*f->type == 'H') {
-      value->type = GB_T_LONG;
+      //value->type = GB_T_LONG;
       // TODO OBJECT of type DwgHandle
-      value->value._long = input->h->absolute_ref;
-      break;
+      //value->value._long = input->h->absolute_ref;
+      GB.ReturnLong (input->h->absolute_ref);
+      return;
     }
+    break;
   case 16:
   case 24: // Float[] or NATIVE_FloatArray
     {
-      GB_ARRAY *floats;
+      GB_ARRAY floats;
       if (f->size < 16) {
-        GB.Error(GB_ERR_TYPE);
-        return;
+        break;
       }
-      value->type = GB_T_OBJECT;
-      // main/gbx/gbx_c_array.c
-      GB_ArrayNew (floats, GB_T_FLOAT, f->size == 16 ? 2 : 3);
-      value->value._object = floats;
+      GB.Array.New (POINTER(&floats), GB_T_FLOAT, f->size == 16 ? 2 : 3);
+      *(double*)GB.Array.Get (floats, 0) = input->pt.x;
+      *(double*)GB.Array.Get (floats, 1) = input->pt.y;
+      if (f->size == 24)
+        *(double*)GB.Array.Get (floats, 2) = input->pt.z;
+      GB.ReturnObject (floats);
+      return;
     }
+  default:
     break;
   }
+  fprintf (stderr, "Unhandled type %s", f->type);
+  GB.Error(GB_ERR_TYPE);
+  GB.ReturnVariant (NULL);
+  return;
 }
 
 static bool gb_to_dynapi_value (const Dwg_Data *dwg,
@@ -197,38 +204,39 @@ GB_DESC SummaryInfo_Desc[] =
 
 #define DWG (((CDwg *)_object)->dwg)
 
-BEGIN_METHOD(Header_get, GB_STRING key)
+BEGIN_METHOD(Header_get, GB_STRING name;)
 
-  const char *_key = STRING(key);
+  char *key = GB.ToZeroString(ARG(name));
   const Dwg_Data *dwg = DWG;
   CDwg_Variant value;
   Dwg_DYNAPI_field f;
-  GB_VARIANT retval;
+  GValue retval = G_VALUE_INIT;
 
   if (!dwg_dynapi_header_value (dwg, _key, &value, &f))
     {
       GB.Error(GB_ERR_BOUND);
       return;
     }
-  dynapi_to_gb_value (dwg, &f, &value, &retval);
-  GB.ReturnVariant (&retval);
+  retval = dynapi_to_gb_value (dwg, &f, &value);
+  //g_value_init(value, type);
+  //return_value (&value);
+  //g_value_unset (&retval);
+  GB.ReturnConvVariant ();
 
 END_METHOD
 
-BEGIN_METHOD(Header_set, GB_STRING key; GB_VALUE value)
+BEGIN_METHOD(Header_put, GB_VARIANT value, GB_STRING name;)
 
-  const char *_key = STRING(key);
+  char *key = GB.ToZeroString(ARG(name));
   GB_VALUE *value = (GB_VALUE *)ARG(value);
   const Dwg_Data *dwg = DWG;
   CDwg_Variant out;
 
   if (!gb_to_dynapi_value (dwg, value, &out))
-    {
-      GB.Error(GB_ERR_TYPE);
-      return;
-    }
-  if (!dwg_dynapi_header_set_value (dwg, _key, &out, true))
-    GB.Error(GB_ERR_BOUND);
+    GB.Error(GB_ERR_TYPE);
+  else
+    if (!dwg_dynapi_header_set_value (dwg, _key, &out, true))
+      GB.Error(GB_ERR_BOUND);
 
 END_METHOD
 
@@ -237,55 +245,74 @@ GB_DESC Header_Desc[] =
    GB_DECLARE("Header", 0), GB_NOT_CREATABLE(),
    // just declare the getter and setter method via dynapi.
    // no properties, no autocompletion on the header_vars fields
-   GB_METHOD("get", "v", Header_get, "(Key)s"),
-   GB_METHOD("set", "b", Header_set, "(Key)s(Value)v"),
+   GB_METHOD("_get", "v", Header_get, "(Name)s"),
+   GB_METHOD("_put", NULL, Header_put, "(Value)v(Name)s"),
    GB_END_DECLARE
 };
 
-BEGIN_METHOD(Objects_get, GB_INTEGER index)
-
-	int index = VARG(index);
-        //int size = SIZE(THIS);
-        //...
-
-END_METHOD
-
-BEGIN_METHOD(Objects_put, GB_VARIANT value; GB_INTEGER index)
-
-	int index = VARG(index);
-        //int size = SIZE(THIS);
-	GB_VALUE *value = (GB_VALUE *)ARG(value);
-        //...
-
-END_METHOD
-
-// I.e. just an array of entities, no map.
-#define ENTITY_ARRAY(token)                                     \
+// This is backed by block_header iterators,
+// but the key is not a string, but indices or handles. Returns dwg_ent_generic
+#define ENTITY_COLLECTION(token)                                \
 GB_DESC token##_Desc[] =                                        \
   {                                                             \
     GB_DECLARE(#token, sizeof(C##token)), GB_NOT_CREATABLE(),   \
-    /* Array of entities */                                     \
-    GB_METHOD("_get", "v", Objects_get, "(Index)i"),            \
-    GB_METHOD("_put", NULL, Objects_put, "(Value)v(Index)i"),   \
+    /* List of entities */                                      \
+    GB_PROPERTY_READ("Count", "i", Entities_count),             \
+    GB_METHOD("_get", "v", Entities_get, "(Index)i"),           \
+    /*GB_METHOD("_put", NULL, Entities_put, "(Object)v(Index)i"),*/ \
+    GB_METHOD("_next", "v",Entities_next, NULL),                \
     GB_END_DECLARE                                              \
   }
-ENTITY_ARRAY (ModelSpace);
-ENTITY_ARRAY (PaperSpace);
-ENTITY_ARRAY (Blocks);
+ENTITY_COLLECTION (ModelSpace);
+ENTITY_COLLECTION (PaperSpace);
+ENTITY_COLLECTION (Blocks);
 
+BEGIN_METHOD(Objects_get, GB_INTEGER index;)
+
+	int index = VARG(index);
+        //int size = SIZE(THIS);
+        //...
+
+END_METHOD
+
+BEGIN_METHOD(Objects_put, GB_OBJECT obj; GB_INTEGER index;)
+
+	int index = VARG(index);
+        //int size = SIZE(THIS);
+	GB_OBJECT *obj = (GB_OBJECT *)ARG(obj);
+        //...
+
+END_METHOD
+
+BEGIN_METHOD(Objects_next)
+
+	GB_OBJECT *obj = (GB_OBJECT *)ARG(obj);
+        //...
+
+END_METHOD
+
+// this is backed by the dwg->object[] array
+#define OBJECT_ARRAY(token)                                     \
+GB_DESC token##_Desc[] =                                        \
+  {                                                             \
+    GB_DECLARE(#token, sizeof(C##token)), GB_NOT_CREATABLE(),   \
+    /* Array of objects */                                      \
+    GB_METHOD("_get", "v", Entities_get, "(Index)i"),           \
+    GB_METHOD("_put", NULL, Entities_put, "(Object)v(Index)i"), \
+    GB_END_DECLARE                                              \
+  }
+
+// this is backed by an TABLE_CONTROL array, looked up by name
 #define TABLE_ARRAY(token, obj)                               \
 GB_DESC token##_Desc[] =                                      \
   {                                                           \
     GB_DECLARE(#token, sizeof(C##token)), GB_NOT_CREATABLE(), \
     /* Array of table records or dict items */                \
     GB_METHOD("_get", "v", Objects_get, "(Index)i"),          \
-    GB_METHOD("_put", NULL, Objects_put, "(Value)v(Index)i"), \
+    GB_METHOD("_put", NULL,Objects_put, "(Value)v(Index)i"),  \
+    GB_METHOD("_next", "v",Objects_next, NULL),               \
     GB_END_DECLARE                                            \
   }
-// FIXME: a hash, not an array
-#define DICT_COLLECTION(token, nodkey, obj) TABLE_ARRAY(token, obj)
-#define DICT_COLLECTION2(token, obj) TABLE_ARRAY(token, obj)
-
 TABLE_ARRAY (DimStyles, DIMSTYLE);
 TABLE_ARRAY (Layers, LAYER);
 TABLE_ARRAY (Linetypes, LTYPE);
@@ -294,6 +321,20 @@ TABLE_ARRAY (TextStyles, STYLE);
 TABLE_ARRAY (UCSs, UCS);
 TABLE_ARRAY (Viewports, VPORT);
 TABLE_ARRAY (Views, VIEW);
+
+// lookup by name in the dictionary array. Returns a dwg_obj_generic or handle
+#define DICT_COLLECTION(token, nodkey, obj)                   \
+GB_DESC token##_Desc[] =                                      \
+  {                                                           \
+    GB_DECLARE(#token, sizeof(C##token)), GB_NOT_CREATABLE(), \
+    /* Hash of dict items */                                  \
+    GB_PROPERTY_READ("Count", "i", Dict_count),               \
+    GB_METHOD("_get", "o", Dict_get, "(Key)s"),               \
+    GB_METHOD("_put", NULL,Dict_put, "(Object)o(Key)s"),      \
+    GB_METHOD("_next", "o",Dict_next, NULL),                  \
+    GB_END_DECLARE                                            \
+  }
+#define DICT_COLLECTION2(token, obj) DICT_COLLECTION(token, obj)
 
 DICT_COLLECTION (Dictionaries, NAMED_OBJECT_DICTIONARY, DICTIONARY);
 //DICT_COLLECTION (PlotConfigurations, PLOTSTYLENAME, PLOTSTYLE);
@@ -317,12 +358,64 @@ DICT_COLLECTION2 (AssocPersSubentManagers, ASSOCPERSSUBENTMANAGER);
 #undef DICT_COLLECTION
 #undef DICT_COLLECTION2
 
-#define DWG_OBJECT(token)                          \
-GB_DESC token##_Desc[] =                           \
-  {                                                \
-    GB_DECLARE(#token, sizeof(C##token)),          \
-    /* Object or Entity */                         \
-    GB_END_DECLARE                                 \
+/* get/set Object or Entity fields by fieldname */
+
+BEGIN_PROPERTY(Object_Count)
+
+  const dwg_ent_generic *obj = VARG(_object);
+  int n = 0;
+  // TODO dynapi: all object specific plus all common fields
+  GB.ReturnInt(n);
+
+END_PROPERTY
+
+BEGIN_METHOD(Object_get, GB_STRING name;)
+
+  const char *key = STRING(name);
+  const dwg_ent_generic *obj = VARG(_object);
+  const Dwg_Data *dwg = DWG;
+  CDwg_Variant value;
+  Dwg_DYNAPI_field f;
+  GB_VARIANT retval;
+
+  if (!dwg_dynapi_entity_value (obj, _key, &value, &f))
+    {
+      GB.Error(GB_ERR_BOUND);
+      return;
+    }
+  dynapi_to_gb_value (dwg, &f, &value, &retval);
+  GB.ReturnVariant (&retval);
+
+END_METHOD
+
+BEGIN_METHOD(Object_set, GB_STRING name; GB_VARIANT value;)
+
+  const char *key = STRING(name);
+  const dwg_ent_generic *obj = VARG(_object);
+  GB_VALUE *value = (GB_VALUE *)ARG(value);
+  const Dwg_Data *dwg = DWG;
+  CDwg_Variant out;
+
+  if (!gb_to_dynapi_value (dwg, value, &out))
+    {
+      GB.Error(GB_ERR_TYPE);
+      return;
+    }
+  if (!dwg_dynapi_entity_set_value (dwg, key, &out, true))
+    GB.Error(GB_ERR_TYPE);
+
+END_METHOD
+
+#define DWG_OBJECT(token)                                \
+GB_DESC token##_Desc[] =                                 \
+  {                                                      \
+    GB_DECLARE(#token, sizeof(C##token)),                \
+    /* get/set Object or Entity fields by fieldname */   \
+    GB_PROPERTY_READ("Count", "i", Object_count),        \
+    GB_METHOD("_get", "v", Object_get, "(Key)s"),        \
+    GB_METHOD("_put", NULL,Object_set, "(Value)v(Key)s"),\
+    GB_METHOD("_next", "s",Object_nextfield, NULL),      \
+    GB_END_DECLARE                                       \
   };
 #define DWG_ENTITY(token) DWG_OBJECT(token)
 #include "objects.inc"
