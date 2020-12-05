@@ -36,9 +36,9 @@
 ***********************************************************************/
 
 // returns a field value
-static void dynapi_to_gb_value (const Dwg_Data *dwg,
-                                const Dwg_DYNAPI_field *f,
-                                const CDwg_Variant *input)
+void dynapi_to_gb_value (const Dwg_Data *dwg,
+                         const Dwg_DYNAPI_field *f,
+                         const CDwg_Variant *input)
 {
   if (!f) {
     fprintf (stderr, "Unknown field");
@@ -113,16 +113,16 @@ static void dynapi_to_gb_value (const Dwg_Data *dwg,
 }
 
 // sets a field value
-static bool gb_to_dynapi_value (const Dwg_Data *dwg,
-                                const GB_VALUE *input,
-                                CDwg_Variant *output)
+bool gb_to_dynapi_value (const Dwg_Data *dwg,
+                         const GB_VALUE *input,
+                         CDwg_Variant *output)
 {
   GB.Error(GB_ERR_TYPE);
   return false;
 }
 
 // returns generic Object
-static CDwgObject* obj_to_gb (Dwg_Object *obj)
+CDwgObject* obj_to_gb (Dwg_Object *obj)
 {
   GB_CLASS klass = GB.FindClass(obj->dxfname);
   CDwgObject *gb = (CDICTIONARY *)GB.New(klass, NULL, NULL);
@@ -136,7 +136,7 @@ static CDwgObject* obj_to_gb (Dwg_Object *obj)
 }
 
 // returns generic Object
-static CDwgObject* obj_generic_to_gb (void *_obj)
+CDwgObject* obj_generic_to_gb (void *_obj)
 {
   int error;
   Dwg_Object *obj = dwg_obj_generic_to_object (_obj, &error);
@@ -147,7 +147,7 @@ static CDwgObject* obj_generic_to_gb (void *_obj)
 }
 
 // returns generic Object
-static CDwgObject* handle_to_gb (Dwg_Data *dwg, Dwg_Object_Ref *hdl)
+CDwgObject* handle_to_gb (Dwg_Data *dwg, Dwg_Object_Ref *hdl)
 {
   Dwg_Object *obj = dwg_ref_object (dwg, hdl);
   if (!obj)
@@ -156,12 +156,12 @@ static CDwgObject* handle_to_gb (Dwg_Data *dwg, Dwg_Object_Ref *hdl)
     return obj_to_gb (obj);
 }
 
-static GB_DATE TIMERLL_to_Data (BITCODE_TIMERLL *date)
+GB_DATE* TIMERLL_to_Date (BITCODE_TIMERLL date)
 {
   GB.ReturnVariant (NULL);
 }
 
-static char* TU_to_utf8 (BITCODE_TU *wstr)
+char* TU_to_utf8 (BITCODE_TU wstr)
 {
   GB.ReturnString (NULL);
 }
@@ -194,12 +194,10 @@ BEGIN_METHOD(DwgDocument_Add, GB_STRING version;) /* optional: is_imperial */
   GB.ReturnObject (cdwg);
 END_METHOD
 
-#ifndef USE_WRITE
 BEGIN_METHOD(DwgDocument_Save, GB_STRING file;)
   char *file = STRING(file);
   dwg_write_file (file, THIS_DWG); // TODO error handling
 END_METHOD
-#endif
 
 BEGIN_METHOD_VOID(DwgDocument_free)
   dwg_free (THIS_DWG);
@@ -224,42 +222,47 @@ END_PROPERTY
 
 BEGIN_PROPERTY(Blocks_prop)
   const Dwg_Data *dwg = THIS_DWG;
-  GB.ReturnObject (obj_generic_to_gb (dwg->block_control));
+  GB.ReturnObject (obj_generic_to_gb (&dwg->block_control));
 END_PROPERTY
 
 BEGIN_PROPERTY(Layers_prop)
   const Dwg_Data *dwg = THIS_DWG;
-  GB.ReturnObject (obj_generic_to_gb (dwg->layer_control));
+  GB.ReturnObject (obj_generic_to_gb (&dwg->layer_control));
 END_PROPERTY
 
 BEGIN_PROPERTY(TextStyles_prop)
   const Dwg_Data *dwg = THIS_DWG;
-  GB.ReturnObject (obj_generic_to_gb (dwg->style_control));
+  GB.ReturnObject (obj_generic_to_gb (&dwg->style_control));
 END_PROPERTY
 
 BEGIN_PROPERTY(Linetypes_prop)
   const Dwg_Data *dwg = THIS_DWG;
-  GB.ReturnObject (obj_generic_to_gb (dwg->ltype_control));
+  GB.ReturnObject (obj_generic_to_gb (&dwg->ltype_control));
 END_PROPERTY
 
 BEGIN_PROPERTY(Regapps_prop)
   const Dwg_Data *dwg = THIS_DWG;
-  GB.ReturnObject (obj_generic_to_gb (dwg->appid_control));
+  GB.ReturnObject (obj_generic_to_gb (&dwg->appid_control));
 END_PROPERTY
 
 BEGIN_PROPERTY(DimStyles_prop)
   const Dwg_Data *dwg = THIS_DWG;
-  GB.ReturnObject (obj_generic_to_gb (dwg->dimstyle_control));
+  GB.ReturnObject (obj_generic_to_gb (&dwg->dimstyle_control));
 END_PROPERTY
 
 BEGIN_PROPERTY(UCSs_prop)
   const Dwg_Data *dwg = THIS_DWG;
-  GB.ReturnObject (obj_generic_to_gb (dwg->ucs_control));
+  GB.ReturnObject (obj_generic_to_gb (&dwg->ucs_control));
+END_PROPERTY
+
+BEGIN_PROPERTY(Viewports_prop)
+  const Dwg_Data *dwg = THIS_DWG;
+  GB.ReturnObject (obj_generic_to_gb (&dwg->vport_control));
 END_PROPERTY
 
 BEGIN_PROPERTY(Views_prop)
   const Dwg_Data *dwg = THIS_DWG;
-  GB.ReturnObject (obj_generic_to_gb (dwg->view_control));
+  GB.ReturnObject (obj_generic_to_gb (&dwg->view_control));
 END_PROPERTY
 
 GB_DESC DwgDocument_Desc[] =
@@ -390,19 +393,19 @@ END_PROPERTY
 BEGIN_PROPERTY(SummaryInfo_tdindwg)
   const Dwg_Data *dwg = THIS_DWG;
   const Dwg_SummaryInfo *si = &dwg->summaryinfo;
-  GB.ReturnDate ( TIMERLL_to_Data (si->TDINDWG) );
+  GB.ReturnDate ( TIMERLL_to_Date (si->TDINDWG) );
 END_PROPERTY
 
 BEGIN_PROPERTY(SummaryInfo_tdcreate)
   const Dwg_Data *dwg = THIS_DWG;
   const Dwg_SummaryInfo *si = &dwg->summaryinfo;
-  GB.ReturnDate ( TIMERLL_to_Data (si->tdcreate) );
+  GB.ReturnDate ( TIMERLL_to_Date (si->TDCREATE) );
 END_PROPERTY
 
 BEGIN_PROPERTY(SummaryInfo_tdupdate)
   const Dwg_Data *dwg = THIS_DWG;
   const Dwg_SummaryInfo *si = &dwg->summaryinfo;
-  GB.ReturnDate ( TIMERLL_to_Data (si->TDUPDATE) );
+  GB.ReturnDate ( TIMERLL_to_Date (si->TDUPDATE) );
 END_PROPERTY
 
 GB_DESC SummaryInfo_Desc[] =
@@ -429,20 +432,17 @@ BEGIN_METHOD(Header_get, GB_STRING name;)
   Dwg_DYNAPI_field f;
   GB_VARIANT retval;
 
-  if (!dwg_dynapi_header_value (dwg, _key, &value, &f))
+  if (!dwg_dynapi_header_value (dwg, key, &value, &f))
     {
       GB.Error(GB_ERR_BOUND);
       return;
     }
-  retval = dynapi_to_gb_value (dwg, &f, &value);
-  //g_value_init(value, type);
-  //return_value (&value);
-  //g_value_unset (&retval);
+  dynapi_to_gb_value (dwg, &f, &value);
   GB.ReturnConvVariant ();
 
 END_METHOD
 
-BEGIN_METHOD(Header_put, GB_VARIANT value, GB_STRING name;)
+BEGIN_METHOD(Header_put, GB_VARIANT value; GB_STRING name;)
 
   char *key = GB.ToZeroString(ARG(name));
   GB_VALUE *value = (GB_VALUE *)ARG(value);
@@ -452,7 +452,7 @@ BEGIN_METHOD(Header_put, GB_VARIANT value, GB_STRING name;)
   if (!gb_to_dynapi_value (dwg, value, &out))
     GB.Error(GB_ERR_TYPE);
   else
-    if (!dwg_dynapi_header_set_value (dwg, _key, &out, true))
+    if (!dwg_dynapi_header_set_value (dwg, key, &out, true))
       GB.Error(GB_ERR_BOUND);
 
 END_METHOD
@@ -467,26 +467,30 @@ GB_DESC Header_Desc[] =
    GB_END_DECLARE
 };
 
+#undef THIS
+#define THIS ((CDimStyles*)_object)
 
 BEGIN_PROPERTY(Objects_Count)
 
   // FIXME number of entities in this collection
-  GB.ReturnInt(0);
+  Dwg_Data *dwg = THIS->dwg;
+  GB.ReturnInteger(dwg->num_objects);
 
 END_PROPERTY
 
 BEGIN_METHOD(Objects_get, GB_INTEGER index;)
 
-  const Dwg_Data *dwg = THIS_DWG;
-  int index = VARG(index);
+  Dwg_Data *dwg = THIS->dwg;
+  unsigned index = (unsigned)VARG(index);
   Dwg_Object *obj;
-  if (index < 0 || index >= dwg->num_objects) 
+  if (index >= dwg->num_objects) 
     {
       GB.Error(GB_ERR_BOUND);
       return;
     }
-  obj = dwg->objects [index];
+  obj = &dwg->object[index];
   // convert to Object/Entity/Table/Dict depending on type
+  GB.ReturnObject (obj_to_gb (obj));
 
 END_METHOD
 
@@ -503,19 +507,22 @@ GB_DESC token##_Desc[] =                                        \
     GB_END_DECLARE                                              \
   }
 
+#undef THIS
+#define THIS ((CDimStyles*)_object)
+
 BEGIN_PROPERTY(Table_Count)
-  GB.ReturnInt(_ctrl->num_entries);
+  GB.ReturnInteger(THIS->_ctrl->num_entries);
 END_PROPERTY
 
 // Add Tablerecord to Tables
 BEGIN_METHOD(Table_Add, GB_STRING name;)
   char *name = STRING(name);
-  Dwg_Type type = ctrl->fixedtype;
+  Dwg_Object_Type type = THIS->ctrl->fixedtype;
 
 #define ADD_TABLE(token)                                 \
   if (type == DWG_TYPE_##token)                          \
     {                                                    \
-      Dwg_Object_##token *_obj = dwg_add_##token (THIS_DWG, name); \
+      Dwg_Object_##token *_obj = dwg_add_##token (THIS->dwg, name); \
       GB.ReturnObject (obj_generic_to_gb (_obj));        \
     }
   ADD_TABLE (BLOCK_HEADER) else
@@ -524,12 +531,11 @@ BEGIN_METHOD(Table_Add, GB_STRING name;)
   ADD_TABLE (DIMSTYLE) else
   ADD_TABLE (APPID) else
   ADD_TABLE (STYLE) else
-  ADD_TABLE (UCS) else
   ADD_TABLE (VPORT) else
   ADD_TABLE (VIEW) else
   if (type == DWG_TYPE_UCS) {
     dwg_point_3d origin = {0.0,0.0,0.0}, x_axis = {1.0,0.0,0.0}, y_axis = {0.0,1.0,0.0};
-    Dwg_Object_UCS *_obj = dwg_add_UCS (THIS_DWG, name, &origin, &x_axis, &y_axis);
+    Dwg_Object_UCS *_obj = dwg_add_UCS (THIS->dwg, &origin, &x_axis, &y_axis, name);
     GB.ReturnObject (obj_generic_to_gb (_obj));
   }
   else {
@@ -541,20 +547,23 @@ END_METHOD
 // lookup in TABLE_CONTROL
 BEGIN_METHOD(Table_get_by_index, GB_INTEGER index;)
   unsigned index = VARG(index);
-  if (index >= _ctrl->num_entries)
+  if (index >= THIS->_ctrl->num_entries)
     {
       GB.Error (GB_ERR_BOUND);
       return;
     }
-GB.ReturnObject (handle_to_gb (THIS_DWG, _ctrl->entries[index]);
+  GB.ReturnObject (handle_to_gb (THIS->dwg, THIS->_ctrl->entries[index]));
 END_METHOD
 
 BEGIN_METHOD(Table_get_by_name, GB_STRING name;)
   char *name = STRING(name);
-  for (unsigned i = 0; i < _ctrl->num_entries; i++)
+  for (unsigned i = 0; i < THIS->_ctrl->num_entries; i++)
     {
-      if (strEQ (_ctrl->entries[i]->name, name)) {
-        GB.ReturnObject (handle_to_gb (THIS_DWG, _ctrl->entries[i]);
+      Dwg_Object_Ref *ref = THIS->_ctrl->entries[i];
+      Dwg_Object *obj = dwg_ref_object (THIS->dwg, ref);
+      Dwg_Object_DIMSTYLE *_obj = obj->tio.object->tio.DIMSTYLE;
+      if (strEQ (_obj->name, name)) {
+        GB.ReturnObject (obj_to_gb (obj));
         return;
       }
     }
@@ -576,7 +585,7 @@ GB_DESC token##s_Desc[] =                                     \
     /*GB_METHOD("_next", "v",Table_next, NULL),*/             \
     GB_END_DECLARE                                            \
   }
-TABLE_ARRAY (Block, BLOCK_HEADER);
+//TABLE_ARRAY (Block, BLOCK_HEADER);
 TABLE_ARRAY (DimStyle, DIMSTYLE);
 TABLE_ARRAY (Layer, LAYER);
 TABLE_ARRAY (Linetype, LTYPE);
@@ -586,13 +595,45 @@ TABLE_ARRAY (UCS, UCS);
 TABLE_ARRAY (Viewport, VPORT);
 TABLE_ARRAY (View, VIEW);
 
+#undef THIS
+#define THIS ((CDictionaries*)_object)
+
+BEGIN_PROPERTY(Dict_Count)
+  GB.ReturnInteger(THIS->dict->numitems);
+END_PROPERTY
+
+BEGIN_METHOD(Dict_get, GB_STRING key;)
+  Dwg_Object_DICTIONARY *dict = THIS->dict;
+  char *key = STRING(key);
+  for (unsigned i = 0; i < dict->numitems; i++)
+    {
+      if (strEQ (dict->texts[i], key)) {
+        GB.ReturnObject (handle_to_gb (THIS->dwg, dict->itemhandles[i]));
+        return;
+      }
+    }
+  GB.ReturnVariant (NULL);
+END_METHOD
+
+BEGIN_METHOD(Dict_put, GB_OBJECT obj; GB_STRING key)
+  GB.ReturnVariant (NULL);
+END_METHOD
+
+BEGIN_METHOD_VOID(Dict_next)
+  Dwg_Object_DICTIONARY *dict = THIS->dict;
+  if (THIS->iter >= dict->numitems)
+    GB.StopEnum();
+  else
+    GB.ReturnObject (handle_to_gb (THIS->dwg, dict->itemhandles[THIS->iter++]));
+END_METHOD
+
 // Lookup by name in the dictionary array. Returns a dwg_obj_generic or handle
 #define DICT_COLLECTION(token, nodkey, obj)                   \
 GB_DESC token##_Desc[] =                                      \
   {                                                           \
     GB_DECLARE(#token, sizeof(C##token)), GB_NOT_CREATABLE(), \
     /* Hash of dict items */                                  \
-    GB_PROPERTY_READ("Count", "i", Dict_count),               \
+    GB_PROPERTY_READ("Count", "i", Dict_Count),               \
     GB_METHOD("_get", "o", Dict_get, "(Key)s"),               \
     GB_METHOD("_put", NULL,Dict_put, "(Object)o(Key)s"),      \
     GB_METHOD("_next", "o",Dict_next, NULL),                  \
@@ -622,13 +663,25 @@ DICT_COLLECTION2 (AssocPersSubentManagers, ASSOCPERSSUBENTMANAGER);
 #undef DICT_COLLECTION
 #undef DICT_COLLECTION2
 
+#undef THIS
+#define THIS ((CXRECORD*)_object)
+#define THIS_ENT ((CPOINT*)_object)
+
 /* get/set Object or Entity fields by fieldname */
 
 BEGIN_PROPERTY(Object_fieldcount)
-  const dwg_ent_generic *obj = VARG(_object);
-  int n = 0;
-  // TODO dynapi: all object-specific fiels plus all common fields
-  GB.ReturnInt(n);
+  const dwg_ent_generic *obj = (dwg_ent_generic *)THIS->_obj;
+  const char *name = THIS->obj->name;
+  Dwg_DYNAPI_field *f = dwg_dynapi_entity_fields (name);
+  unsigned n = 0;
+  for (; f && f->name; f++)
+    n++;
+  f = THIS->obj->supertype == DWG_SUPERTYPE_ENTITY
+    ? dwg_dynapi_common_entity_fields ()
+    : dwg_dynapi_common_object_fields ();
+  for (; f && f->name; f++)
+    n++;
+  GB.ReturnInteger (n);
 END_PROPERTY
 
 // Objects are added to the DWG, Entities to a BLOCK_HEADER
@@ -639,38 +692,39 @@ BEGIN_METHOD(Object_Add, GB_OBJECT dwg; GB_STRING name;)
 
 END_METHOD
 
-BEGIN_METHOD(Entity_Add, GB_OBJECT blkhdr; GB_STRING name;)
+BEGIN_METHOD(Entity_Add, GB_OBJECT blkhdr; GB_STRING name)
 
   const char *klass = STRING(name);
   // FIXME
 
 END_METHOD
 
-BEGIN_METHOD(Object_get, GB_STRING field;)
+BEGIN_METHOD(Object_get, GB_STRING field)
 
   const char *key = STRING(field);
-  const dwg_ent_generic *obj = VARG(_object);
-  const Dwg_Data *dwg = THIS_DWG;
+  const dwg_ent_generic *obj = (dwg_ent_generic *)THIS->_obj;
+  const char *dxfname = THIS->obj->dxfname;
+  const Dwg_Data *dwg = THIS->dwg;
   CDwg_Variant value;
   Dwg_DYNAPI_field f;
   GB_VARIANT retval;
 
-  if (!dwg_dynapi_entity_value (obj, key, &value, &f))
+  if (!dwg_dynapi_entity_value (obj, dxfname, key, &value, &f))
     {
       GB.Error(GB_ERR_BOUND);
       return;
     }
-  dynapi_to_gb_value (dwg, &f, &value, &retval);
-  GB.ReturnVariant (&retval);
+  dynapi_to_gb_value (dwg, &f, &value);
 
 END_METHOD
 
-BEGIN_METHOD(Object_set, GB_STRING field; GB_VARIANT value;)
+BEGIN_METHOD(Object_set, GB_STRING field; GB_VARIANT value)
 
   const char *key = STRING(field);
-  const dwg_ent_generic *obj = VARG(_object);
+  const dwg_ent_generic *obj = (dwg_ent_generic *)THIS->_obj;
+  const char *dxfname = THIS->obj->dxfname;
   GB_VALUE *value = (GB_VALUE *)ARG(value);
-  const Dwg_Data *dwg = THIS_DWG;
+  const Dwg_Data *dwg = THIS->dwg;
   CDwg_Variant out;
 
   if (!gb_to_dynapi_value (dwg, value, &out))
@@ -678,8 +732,50 @@ BEGIN_METHOD(Object_set, GB_STRING field; GB_VARIANT value;)
       GB.Error(GB_ERR_TYPE);
       return;
     }
-  if (!dwg_dynapi_entity_set_value (dwg, key, &out, true))
+  if (!dwg_dynapi_entity_set_value (dwg, dxfname, key, &out, true))
     GB.Error(GB_ERR_TYPE);
+
+END_METHOD
+
+BEGIN_METHOD_VOID(Object_nextfield)
+
+  const dwg_ent_generic *obj = (dwg_ent_generic *)THIS->_obj;
+  const char *name = THIS->obj->name;
+  CDwg_Variant value;
+  Dwg_DYNAPI_field *fields = dwg_dynapi_entity_fields (name);
+  Dwg_DYNAPI_field f;
+  unsigned n = 0;
+  for (; fields && fields->name; fields++) {
+    n++;
+    if (THIS->iter == n) {
+      if (!dwg_dynapi_entity_value (obj, name, fields->name, &value, &f))
+        {
+          GB.Error(GB_ERR_BOUND);
+          return;
+        }
+      THIS->iter++;
+      dynapi_to_gb_value (THIS->dwg, &f, &value);
+      return;
+    }
+  }
+
+  fields = THIS->obj->supertype == DWG_SUPERTYPE_ENTITY
+    ? dwg_dynapi_common_entity_fields ()
+    : dwg_dynapi_common_object_fields ();
+  for (; fields && fields->name; fields++) {
+    n++;
+    if (THIS->iter == n) {
+      if (!dwg_dynapi_entity_value (obj, name, fields->name, &value, &f))
+        {
+          GB.Error(GB_ERR_BOUND);
+          return;
+        }
+      THIS->iter++;
+      dynapi_to_gb_value (THIS->dwg, &f, &value);
+      return;
+    }
+  }
+  GB.StopEnum();
 
 END_METHOD
 

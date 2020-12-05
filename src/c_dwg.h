@@ -122,7 +122,7 @@ typedef union {
     Dwg_Data *dwg;                                 \
     Dwg_Object *ctrl;                              \
     /* list or array? */                           \
-    Dwg_Object_##object *_ctrl;                    \
+    Dwg_Object_##object##_CONTROL *_ctrl;          \
   } C##token
 // The nodkey: "ACAD_"#nodkey
 #define DICT_COLLECTION(token, nodkey, object)     \
@@ -132,7 +132,8 @@ typedef union {
     Dwg_Object *dictobj;                           \
     const char *nodkey;                            \
     /* map */                                      \
-    Dwg_Object_##object *_obj;                     \
+    Dwg_Object_DICTIONARY *dict;                   \
+    unsigned iter;                                 \
   } C##token
 #define DICT_COLLECTION2(token, object)            \
   DICT_COLLECTION(token, object, object)
@@ -176,6 +177,7 @@ DICT_COLLECTION2 (AssocPersSubentManagers, ASSOCPERSSUBENTMANAGER);
     Dwg_Object *obj;                            \
     Dwg_Object_Object *common;                  \
     Dwg_Object_##token *_obj;                   \
+    unsigned iter;                              \
   } C##token;
 #define DWG_ENTITY(token)                       \
   typedef struct {                              \
@@ -184,12 +186,26 @@ DICT_COLLECTION2 (AssocPersSubentManagers, ASSOCPERSSUBENTMANAGER);
     Dwg_Object *obj;                            \
     Dwg_Object_Entity *common;                  \
     Dwg_Entity_##token *_obj;                   \
+    unsigned iter;                              \
   } C##token;
 #include "objects.inc"
 #undef DWG_OBJECT
 #undef DWG_ENTITY
 
 typedef CDICTIONARY CDwgObject;
+
+
+void dynapi_to_gb_value (const Dwg_Data *dwg,
+                         const Dwg_DYNAPI_field *f,
+                         const CDwg_Variant *input);
+bool gb_to_dynapi_value (const Dwg_Data *dwg,
+                         const GB_VALUE *input,
+                         CDwg_Variant *output);
+CDwgObject* obj_to_gb (Dwg_Object *obj);
+CDwgObject* obj_generic_to_gb (void *_obj);
+CDwgObject* handle_to_gb (Dwg_Data *dwg, Dwg_Object_Ref *hdl);
+GB_DATE* TIMERLL_to_Date (BITCODE_TIMERLL date);
+char* TU_to_utf8 (BITCODE_TU wstr);
 
 #define strEQ(s1, s2) !strcmp ((s1), (s2))
 #define strNE(s1, s2) strcmp ((s1), (s2))

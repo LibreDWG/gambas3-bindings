@@ -32,7 +32,7 @@
     Dwg_Data *dwg;                                 \
     Dwg_Object_BLOCK_HEADER *blkhdr;               \
     /* list of entities: */                        \
-    unsigned count;                                \
+    unsigned iter;                                 \
     Dwg_Object *curr;                              \
   } C##token
 
