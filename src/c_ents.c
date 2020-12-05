@@ -249,6 +249,62 @@ BEGIN_METHOD(Blk_AddDimRotated, GB_OBJECT xline1_pt; GB_OBJECT xline2_pt;
   GB.ReturnObject (obj_generic_to_gb (_obj));
 END_METHOD
 
+// (Center)f[3](MajorAxis)f(RadiusRatio)f
+BEGIN_METHOD(Blk_AddEllipse, GB_OBJECT center; GB_FLOAT major_axis; GB_FLOAT radius_ratio)
+  Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
+  Dwg_Entity_ELLIPSE *_obj;
+  double major_axis = (double)VARG(major_axis);
+  double radius_ratio = (double)VARG(radius_ratio);
+  dwg_point_3d center;
+  SET_PT1 (center);
+  _obj = dwg_add_ELLIPSE (blkhdr, &center, major_axis, radius_ratio);
+  GB.ReturnObject (obj_generic_to_gb (_obj));
+END_METHOD
+
+// (PatternType)i(PatternName)s(Associativity)b(PathObjects)o[]
+BEGIN_METHOD(Blk_AddHatch, GB_INTEGER pattern_type; GB_STRING name; GB_BOOLEAN is_associative;
+                           GB_OBJECT pathobjs)
+  Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
+  Dwg_Entity_HATCH *_obj;
+  int pattern_type = (int)VARG(pattern_type);
+  char *name = STRING(name);
+  bool is_associative = (bool)VARG(is_associative);
+  GB_ARRAY paths = (GB_ARRAY)VARG(pathobjs);
+  int num = GB.Array.Count(paths);
+  const Dwg_Object **pathobjs = calloc (num, sizeof (Dwg_Object*));
+  for (unsigned i = 0; i < num; i++) {
+    pathobjs[i] = *(Dwg_Object**)GB.Array.Get (paths, i);
+  }
+  _obj = dwg_add_HATCH (blkhdr, pattern_type, name, is_associative,
+                        num, pathobjs);
+  GB.ReturnObject (obj_generic_to_gb (_obj));
+END_METHOD
+
+// (Points)f[](Annotation)o(Type)i
+BEGIN_METHOD(Blk_AddLeader, GB_OBJECT points; GB_OBJECT annotation; GB_INTEGER type)
+  Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
+  Dwg_Entity_LEADER *_obj;
+  GB_ARRAY points = (GB_ARRAY)VARG(points);
+  CDwgObject* annotation = (CDwgObject*)VARG(annotation);
+  int type = (int)VARG(type);
+  int num = GB.Array.Count(points) / 3;
+  dwg_point_3d *pts;
+
+  if (GB.Array.Count(points) % 3) { // needs to be dividable by 3
+    GB.Error(GB_ERR_BOUND);
+    GB.ReturnVariant (NULL);
+    return;
+  }
+  pts = calloc (num, sizeof (dwg_point_3d));
+  for (unsigned i = 0, j = 0; i < num; i++) {
+    pts[i].x = *(double*)GB.Array.Get (points, j++);
+    pts[i].y = *(double*)GB.Array.Get (points, j++);
+    pts[i].z = *(double*)GB.Array.Get (points, j++);
+  }
+  _obj = dwg_add_LEADER (blkhdr, num, pts, annotation ? annotation->obj : NULL, type);
+  GB.ReturnObject (obj_generic_to_gb (_obj));
+END_METHOD
+
 // This is backed by block_header iterators,
 // but the key is not a string, but indices or handles. Returns dwg_ent_generic.
 #undef ENTITY_COLLECTION
@@ -265,7 +321,7 @@ GB_DESC token##_Desc[] =                                        \
     GB_METHOD("AddArc", "_ARC;", Blk_AddArc, "(Center)f[3](Radius)f(StartAngle)f(EndAngle)f"), \
     /* \
     GB_METHOD("AddAttribute", "_ATTDEF;", Blk_AddAttribute, "(Height)f(Mode)i(Prompt)s(InsPoint)f[3](Tag)s(Value)s"), \
-    GB_METHOD("AddBox", "_3DSOLID;", Blk_AddBox, "(Origin)f[3](Length)f(Width)f(Height)f"), \
+    GB_METHOD("AddBox", "_ACSH_BOX_CLASS;", Blk_AddBox, "(Origin)f[3](Length)f(Width)f(Height)f"), \
     */                                                                     \
     GB_METHOD("AddCircle", "_CIRCLE;", Blk_AddCircle, "(Center)f[3](Radius)f"), \
     /*                                                                     \
@@ -282,6 +338,15 @@ GB_DESC token##_Desc[] =                                        \
     GB_METHOD("AddDimRadial", "_DIMENSION_RADIUS;", Blk_AddDimRadial, "(Center)f[3](ChordPoint)f[3](LeaderLength)f"), \
     GB_METHOD("AddDimadialLarge", "_DIMENSION_LARGE_RADIAL_DIMENSION;", Blk_AddDimRadialLarge, "(Center)f[3](ChordPoint)f[3](OverrideCenter)f[3](JogPoint)f[3](JogAngle)f"), \
     GB_METHOD("AddDimRotated", "_DIMENSION_LINEAR;", Blk_AddDimRotated, "(XLine1Point)f[3](XLine2Point)f[3](DefPoint)f[3](RotationAngle)f"), \
+    GB_METHOD("AddEllipse", "_ELLIPSE;", Blk_AddEllipse, "(Center)f[3](MajorAxis)f(RadiusRatio)f"), \
+    /*                                                                     \
+    GB_METHOD("AddEllipticalCone", "_3DSOLID;", Blk_AddEllipticalCone, "(Center)f[3](MajorRadius)f(MinorRadius)f(Height)f"), \
+    GB_METHOD("AddEllipticalCylinder", "_3DSOLID;", Blk_AddEllipticalCylinder, "(Center)f[3](MajorRadius)f(MinorRadius)f(Height)f"), \
+    GB_METHOD("AddExtrudedSolid", "_3DSOLID;", Blk_AddExtrudedSolid, "(Profile)o(Height)f(TaperAngle)f"), \
+    GB_METHOD("AddExtrudedSolidAlongPath", "_3DSOLID;", Blk_AddExtrudedSolidAlongPath, "(Profile)o(PathObj)o"), \
+    */                                                                     \
+    GB_METHOD("AddHatch", "_HATCH;", Blk_AddHatch, "(PatternType)i(PatternName)s(Associativity)b(PathObjects)o[]"), \
+    GB_METHOD("AddLeader", "_LEADER;", Blk_AddLeader, "(Points)f[](Annotation)o(Type)i"), \
                                                                            \
     GB_METHOD("_get", "_CDwgObject;", Entities_get, "(Index)i"),           \
     /*GB_METHOD("_put", NULL, Entities_put, "(Object)v(Index)i"),*/        \
