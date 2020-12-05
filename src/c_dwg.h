@@ -81,27 +81,14 @@ DICT_COLLECTION (AssocPersSubentManagers, ASSOCPERSSUBENTMANAGER);
 #undef DWG_ENTITY 
 
 #undef CLASSDESC
-#else
 
-#define THIS ((CDWGDOCUMENT *)_object)
-#define THIS_DXF ((CDXFDOCUMENT *)_object)
+#else /* _C_DWG_C */
 
-#endif
+#define THIS ((CDwgDocument *)_object)
+#define THIS_DWG THIS->dwg
+#define THIS_DXF ((CDxfDocument *)_object)
 
-#if LIBREDWG_VERSION_0_76
-
-#define CDWG_list_get(_list, _i) ((_list)->at(_i))
-#define CDWG_list_count(_list) ((_list)->size())
-
-#else
-
-#define CDWG_list_get(_list, _i) ((OutlineItem *)(_list)->get(_i))
-#define CDWG_list_count(_list) ((_list)->getLength())
-
-#endif
-
-#define CDWG_index_get(_i) CDWG_list_get(THIS->index, _i)
-#define CDWG_index_count() CDWG_list_count(THIS->index)
+#endif /* _C_DWG_C */
 
 typedef struct {
   GB_BASE ob;
@@ -125,30 +112,31 @@ typedef union {
   BITCODE_BLL bll;
   BITCODE_T t;
   BITCODE_H h;
-  BITCODE_2RD pt2d;
-  BITCODE_3BD pt3d;
+  BITCODE_3BD pt;
 } CDwg_Variant;
 
-#define ENTITY_COLLECTION(token)                   \
-  typedef struct {                                 \
-    GB_BASE ob;                                    \
-    /* list? */                                    \
-  } C##token
-
-ENTITY_COLLECTION (ModelSpace);
-ENTITY_COLLECTION (PaperSpace);
-ENTITY_COLLECTION (Blocks);
-
+// get, put. next
 #define TABLE_COLLECTION(token, object)            \
   typedef struct {                                 \
     GB_BASE ob;                                    \
-    /* list? */                                    \
-    Dwg_Object_##object _obj;                      \
+    Dwg_Data *dwg;                                 \
+    Dwg_Object *ctrl;                              \
+    /* list or array? */                           \
+    Dwg_Object_##object##_CONTROL *_ctrl;          \
   } C##token
+// The nodkey: "ACAD_"#nodkey
 #define DICT_COLLECTION(token, nodkey, object)     \
-  TABLE_COLLECTION(token, object)
+  typedef struct {                                 \
+    GB_BASE ob;                                    \
+    Dwg_Data *dwg;                                 \
+    Dwg_Object *dictobj;                           \
+    const char *nodkey;                            \
+    /* map */                                      \
+    Dwg_Object_DICTIONARY *dict;                   \
+    unsigned iter;                                 \
+  } C##token
 #define DICT_COLLECTION2(token, object)            \
-  TABLE_COLLECTION(token, object)
+  DICT_COLLECTION(token, object, object)
 
 TABLE_COLLECTION (DimStyles, DIMSTYLE);
 TABLE_COLLECTION (Layers, LAYER);
@@ -185,18 +173,39 @@ DICT_COLLECTION2 (AssocPersSubentManagers, ASSOCPERSSUBENTMANAGER);
 #define DWG_OBJECT(token)                       \
   typedef struct {                              \
     GB_BASE ob;                                 \
-    Dwg_Object_Object c;                        \
-    Dwg_Object_##token o;                       \
+    Dwg_Data *dwg;                              \
+    Dwg_Object *obj;                            \
+    Dwg_Object_Object *common;                  \
+    Dwg_Object_##token *_obj;                   \
+    unsigned iter;                              \
   } C##token;
 #define DWG_ENTITY(token)                       \
   typedef struct {                              \
     GB_BASE ob;                                 \
-    Dwg_Object_Entity c;                        \
-    Dwg_Entity_##token o;                       \
+    Dwg_Data *dwg;                              \
+    Dwg_Object *obj;                            \
+    Dwg_Object_Entity *common;                  \
+    Dwg_Entity_##token *_obj;                   \
+    unsigned iter;                              \
   } C##token;
 #include "objects.inc"
 #undef DWG_OBJECT
 #undef DWG_ENTITY
+
+typedef CDICTIONARY CDwgObject;
+
+
+void dynapi_to_gb_value (const Dwg_Data *dwg,
+                         const Dwg_DYNAPI_field *f,
+                         const CDwg_Variant *input);
+bool gb_to_dynapi_value (const Dwg_Data *dwg,
+                         const GB_VALUE *input,
+                         CDwg_Variant *output);
+CDwgObject* obj_to_gb (Dwg_Object *obj);
+CDwgObject* obj_generic_to_gb (void *_obj);
+CDwgObject* handle_to_gb (Dwg_Data *dwg, Dwg_Object_Ref *hdl);
+GB_DATE* TIMERLL_to_Date (BITCODE_TIMERLL date);
+char* TU_to_utf8 (BITCODE_TU wstr);
 
 #define strEQ(s1, s2) !strcmp ((s1), (s2))
 #define strNE(s1, s2) strcmp ((s1), (s2))
@@ -204,7 +213,7 @@ DICT_COLLECTION2 (AssocPersSubentManagers, ASSOCPERSSUBENTMANAGER);
 #define strNEc(s1, s2) strcmp ((s1), s2 "")
 
 #define memBEGIN(s1, s2, len) (strlen (s1) >= len && !memcmp (s1, s2, len))
-#define memBEGINc(s1, s2)                                                     \
+#define memBEGINc(s1, s2)                       \
   (strlen (s1) >= sizeof (s2 "") - 1 && !memcmp (s1, s2, sizeof (s2 "") - 1))
 
 #endif

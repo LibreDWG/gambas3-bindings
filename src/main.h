@@ -25,7 +25,10 @@
 #define __MAIN_H
 
 #include "config.h"
+#include "gb_common.h"
 #include "gambas.h"
+
+#define USE_WRITE
 #include <dwg.h>
 #include <dwg_api.h>
 
@@ -74,4 +77,4 @@ extern GB_CLASS CLASS_AssocPersSubentManagers;
 
 #endif
 
-#endif /* _MAIN_H */
+#endif /* __MAIN_H */
