@@ -820,6 +820,41 @@ BEGIN_METHOD(Blk_AddTorus, GB_OBJECT center; GB_FLOAT torus_radius; GB_FLOAT tub
 #endif
 END_METHOD
 
+
+// (path_name)s(name)s(ins_pt)f[3](xscale)f(yscale)f(zscale)f(rotation)f(is_overlay)b
+BEGIN_METHOD(Blk_AttachExternalReference, GB_STRING path_name; GB_STRING name;
+             GB_OBJECT ins_pt; GB_FLOAT xscale; GB_FLOAT yscale; GB_FLOAT zscale;
+             GB_FLOAT rotation; GB_BOOLEAN is_overlay)
+  Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
+  Dwg_Entity_INSERT *_obj;
+  dwg_point_3d ins_pt;
+  char *path_name = STRING(path_name);
+  char *name = STRING(name);
+  double xscale = (double)VARG(xscale);
+  double yscale = (double)VARG(yscale);
+  double zscale = (double)VARG(zscale);
+  double rotation = (double)VARG(rotation);
+  bool is_overlay = (bool)VARG(is_overlay);
+  SET_PT1 (ins_pt);
+  _obj = dwg_add_INSERT (blkhdr, &ins_pt, name, xscale, yscale, zscale, rotation);
+  if (_obj->block_header) {
+    int error;
+    Dwg_Object *blk = dwg_ref_object (THIS->dwg, _obj->block_header);
+    Dwg_Object_BLOCK_HEADER *_blk = blk->tio.object->tio.BLOCK_HEADER;
+    Dwg_Object *obj = dwg_obj_generic_to_object (_obj, &error);
+    _blk->is_xref_resolved = 1;
+    _blk->is_xref_dep = 1;
+    _blk->is_xref_resolved = 256;
+    _blk->xref_pname = path_name;
+    _blk->blkisxref = 1;
+    _blk->xrefoverlaid = is_overlay;
+    _blk->xref = dwg_add_handleref (THIS->dwg, 5, obj->handle.value, blk);
+    _blk->flag |= 1 << 4 | 1 << 6;
+  }
+  GB.ReturnObject (obj_generic_to_gb (_obj));
+END_METHOD
+
+
 // This is backed by block_header iterators,
 // but the key is not a string, but indices or handles. Returns dwg_ent_generic.
 #undef ENTITY_COLLECTION
@@ -885,6 +920,7 @@ GB_DESC token##_Desc[] =                                        \
     GB_METHOD("AddTrace", "_TRACE;", Blk_AddTrace, "(points3d)f[]"), \
     GB_METHOD("AddWedge", "_3DSOLID;", Blk_AddWedge, "(Center)f[3](Length)f(Width)f(Height)f"), \
     GB_METHOD("AddXLine", "_XLINE;", Blk_AddXLine, "(Point1)f[3](Point2)f[3]"),  \
+    GB_METHOD("AttachExternalReference", "_INSERT;", Blk_AttachExternalReference, "(path_name)s(name)s(ins_pt)f[3](xscale)f(yscale)f(zscale)f(rotation)f(is_overlay)b"),  \
     \
     GB_METHOD("_get", "_CDwgObject;", Entities_get, "(Index)i"),           \
     /*GB_METHOD("_put", NULL, Entities_put, "(Object)v(Index)i"),*/        \

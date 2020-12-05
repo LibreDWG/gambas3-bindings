@@ -310,7 +310,7 @@ GB_DESC DwgDocument_Desc[] =
   /*
   GB_METHOD("SaveAs",0, DwgDocument_SaveAs,"[File, (Version)]"),
   GB_METHOD("Export",0, DwgDocument_Export,"[File, Extension ]"),
-  GB_METHOD("Close", 0, DwgDocument_Close, 0), //ignore?
+  GB_METHOD("Close", 0, DwgDocument_Close, 0),
 
   GB_METHOD("AddDictionary", 0, Dwg_AddDictionary, "(Name)s(Key)s(Handle)o"),
   GB_METHOD("AddDictionaryWDflt", 0, Dwg_AddDictionaryWDflt, "(Name)s(Key)s(Handle)o"),
@@ -685,19 +685,29 @@ BEGIN_PROPERTY(Object_fieldcount)
 END_PROPERTY
 
 // Objects are added to the DWG, Entities to a BLOCK_HEADER
+// Not here, rather see c_ents.c
+/*
 BEGIN_METHOD(Object_Add, GB_OBJECT dwg; GB_STRING name;)
-
   const char *klass = STRING(name);
   // FIXME
+  GB.ReturnVariant (NULL);
+END_METHOD
+*/
+
+BEGIN_METHOD_VOID(Object_Copy)
+
+  // FIXME
+  GB.ReturnVariant (NULL);
 
 END_METHOD
 
+/*
 BEGIN_METHOD(Entity_Add, GB_OBJECT blkhdr; GB_STRING name)
-
   const char *klass = STRING(name);
   // FIXME
-
+  GB.ReturnVariant (NULL);
 END_METHOD
+*/
 
 BEGIN_METHOD(Object_get, GB_STRING field)
 
@@ -784,17 +794,19 @@ GB_DESC token##_Desc[] =                                 \
   {                                                      \
     GB_DECLARE(#token, sizeof(C##token)),                \
     GB_PROPERTY_READ("Count", "i", Object_fieldcount),   \
+    GB_METHOD("Copy", "o", Object_Copy, NULL),           \
     /* get/set Object fields by fieldname */             \
     GB_METHOD("_get", "v", Object_get, "(Field)s"),      \
     GB_METHOD("_put", NULL,Object_set, "(Value)v(Field)s"),\
     GB_METHOD("_next", "s",Object_nextfield, NULL),      \
     GB_END_DECLARE                                       \
   };
-#define DWG_ENTITY(token) \
+#define DWG_ENTITY(token)                                \
 GB_DESC token##_Desc[] =                                 \
   {                                                      \
     GB_DECLARE(#token, sizeof(C##token)),                \
     GB_PROPERTY_READ("Count", "i", Object_fieldcount),   \
+    GB_METHOD("Copy", "o", Object_Copy, NULL),           \
     /* get/set Entity fields by fieldname */             \
     GB_METHOD("_get", "v", Object_get, "(Field)s"),      \
     GB_METHOD("_put", NULL,Object_set, "(Value)v(Field)s"),\
@@ -805,7 +817,8 @@ GB_DESC token##_Desc[] =                                 \
 #undef DWG_OBJECT
 #undef DWG_ENTITY
 
-/* TODO Add object specific methods:
+/* TODO object specific methods (can we add them to the class_Desc?)
+
 SORTENTSTABLE.Block
 HATCH.AppendInnerLoop
 HATCH.AppendOuterLoop
@@ -813,5 +826,12 @@ HATCH.AppendOuterLoop
 REGION.Boolean
 GROUP.AppendItems
 POLYLINE_{3D,2D,MESH}.AppendVertex
+BLOCK.Bind
+TABLE.ClearTableStyleOverrides
+IMAGE.ClipBoundary
+UNDERLAY.ClipBoundary
+INSERT.ConvertToAnonymousBlock
+INSERT.ConvertToStaticBlock
+TABLE_STYLE.CreateCellStyle
 
 */
