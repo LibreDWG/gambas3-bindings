@@ -305,6 +305,196 @@ BEGIN_METHOD(Blk_AddLeader, GB_OBJECT points; GB_OBJECT annotation; GB_INTEGER t
   GB.ReturnObject (obj_generic_to_gb (_obj));
 END_METHOD
 
+// (Points2D)f[]
+BEGIN_METHOD(Blk_AddLightWeightPolyline, GB_OBJECT points2d)
+  Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
+  Dwg_Entity_LWPOLYLINE *_obj;
+  GB_ARRAY points = (GB_ARRAY)VARG(points2d);
+  int num = GB.Array.Count(points) / 2;
+  dwg_point_2d *pts;
+
+  if (GB.Array.Count(points) % 2) { // needs to be dividable by 2
+    GB.Error(GB_ERR_BOUND);
+    GB.ReturnVariant (NULL);
+    return;
+  }
+  pts = calloc (num, sizeof (dwg_point_2d));
+  for (unsigned i = 0, j = 0; i < num; i++) {
+    pts[i].x = *(double*)GB.Array.Get (points, j++);
+    pts[i].y = *(double*)GB.Array.Get (points, j++);
+  }
+  _obj = dwg_add_LWPOLYLINE (blkhdr, num, pts);
+  GB.ReturnObject (obj_generic_to_gb (_obj));
+END_METHOD
+
+BEGIN_METHOD(Blk_AddLine, GB_OBJECT pt1; GB_OBJECT pt2)
+  Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
+  Dwg_Entity_LINE *_obj;
+  dwg_point_3d pt1, pt2;
+  SET_PT1 (pt1);
+  SET_PT1 (pt2);
+  _obj = dwg_add_LINE (blkhdr, &pt1, &pt2);
+  GB.ReturnObject (obj_generic_to_gb (_obj));
+END_METHOD
+
+// InsPoint)f[3](Name)s(XScale)f(YScale)f(ZScale)f(Rotation)f(NumRows)i(NumColumns)i(RowSpacing)f(ColumnsSpacing)f
+BEGIN_METHOD(Blk_AddMInsertBlock, GB_OBJECT ins_pt; GB_STRING name;
+             GB_FLOAT xscale; GB_FLOAT yscale; GB_FLOAT zscale; GB_FLOAT rotation;
+             GB_INTEGER num_rows; GB_INTEGER num_cols;
+             GB_FLOAT row_spacing; GB_FLOAT col_spacing)
+  Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
+  Dwg_Entity_MINSERT *_obj;
+  dwg_point_3d ins_pt;
+  char *name = STRING(name);
+  double xscale = (double)VARG(xscale);
+  double yscale = (double)VARG(yscale);
+  double zscale = (double)VARG(zscale);
+  double rotation = (double)VARG(rotation);
+  int num_rows = (int)VARG(num_rows);
+  int num_cols = (int)VARG(num_cols);
+  double row_spacing = (double)VARG(row_spacing);
+  double col_spacing = (double)VARG(col_spacing);
+  if (!dwg_find_tablehandle (THIS->dwg, name, "BLOCK")) {
+    GB.Error (GB_ERR_TYPE); // block not yet defined
+    GB.ReturnVariant (NULL);
+    return;
+  }
+  SET_PT1 (ins_pt);
+  _obj = dwg_add_MINSERT (blkhdr, &ins_pt, name, xscale, yscale, zscale, rotation,
+                          num_rows, num_cols, row_spacing, col_spacing);
+  GB.ReturnObject (obj_generic_to_gb (_obj));
+END_METHOD
+
+// (InsPoint)f[3](Name)s(XScale)f(YScale)f(ZScale)f(Rotation)
+BEGIN_METHOD(Blk_AddInsertBlock, GB_OBJECT ins_pt; GB_STRING name;
+             GB_FLOAT xscale; GB_FLOAT yscale; GB_FLOAT zscale; GB_FLOAT rotation)
+  Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
+  Dwg_Entity_INSERT *_obj;
+  dwg_point_3d ins_pt;
+  char *name = STRING(name);
+  double xscale = (double)VARG(xscale);
+  double yscale = (double)VARG(yscale);
+  double zscale = (double)VARG(zscale);
+  double rotation = (double)VARG(rotation);
+  if (!dwg_find_tablehandle (THIS->dwg, name, "BLOCK")) {
+    GB.Error (GB_ERR_TYPE); // block not yet defined
+    GB.ReturnVariant (NULL);
+    return;
+  }
+  SET_PT1 (ins_pt);
+  _obj = dwg_add_INSERT (blkhdr, &ins_pt, name, xscale, yscale, zscale, rotation);
+  GB.ReturnObject (obj_generic_to_gb (_obj));
+END_METHOD
+
+// (Points)f[](LeaderLineIndex)i
+BEGIN_METHOD(Blk_AddMLeader, GB_OBJECT points; GB_INTEGER leaderline_index)
+  Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
+  Dwg_Entity_MULTILEADER *_obj;
+  GB_ARRAY points = (GB_ARRAY)VARG(points);
+  int leaderline_index = (int)VARG(leaderline_index);
+  int num = GB.Array.Count(points) / 3;
+  dwg_point_3d *pts;
+
+  if (GB.Array.Count(points) % 3) { // needs to be dividable by 3
+    GB.Error(GB_ERR_BOUND);
+    GB.ReturnVariant (NULL);
+    return;
+  }
+  pts = calloc (num, sizeof (dwg_point_3d));
+  for (unsigned i = 0, j = 0; i < num; i++) {
+    pts[i].x = *(double*)GB.Array.Get (points, j++);
+    pts[i].y = *(double*)GB.Array.Get (points, j++);
+    pts[i].z = *(double*)GB.Array.Get (points, j++);
+  }
+  if (0)
+    ; // _obj = dwg_add_MULTILEADER (blkhdr, num, pts, leaderline_index);
+  else {
+    GB.Error (GB_ERR_TYPE);
+    GB.ReturnVariant (NULL);
+    return;
+  }
+  GB.ReturnObject (obj_generic_to_gb (_obj));
+END_METHOD
+
+// (Points3D)f[]
+BEGIN_METHOD(Blk_AddMLine, GB_OBJECT points3d)
+  Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
+  Dwg_Entity_MLINE *_obj;
+  GB_ARRAY points = (GB_ARRAY)VARG(points3d);
+  int num = GB.Array.Count(points) / 3;
+  dwg_point_3d *pts;
+
+  if (GB.Array.Count(points) % 3) { // needs to be dividable by 3
+    GB.Error(GB_ERR_BOUND);
+    GB.ReturnVariant (NULL);
+    return;
+  }
+  pts = calloc (num, sizeof (dwg_point_3d));
+  for (unsigned i = 0, j = 0; i < num; i++) {
+    pts[i].x = *(double*)GB.Array.Get (points, j++);
+    pts[i].y = *(double*)GB.Array.Get (points, j++);
+    pts[i].z = *(double*)GB.Array.Get (points, j++);
+  }
+  _obj = dwg_add_MLINE (blkhdr, num, pts);
+  GB.ReturnObject (obj_generic_to_gb (_obj));
+END_METHOD
+
+// (InsPoint)f[3](Width)f(Text)s
+BEGIN_METHOD(Blk_AddMText, GB_OBJECT ins_pt; GB_FLOAT width; GB_STRING text)
+  Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
+  Dwg_Entity_MTEXT *_obj;
+  dwg_point_3d ins_pt;
+  double width = (double)VARG(width);
+  char *text = STRING(text);
+  _obj = dwg_add_MTEXT (blkhdr, &ins_pt, width, text);
+  GB.ReturnObject (obj_generic_to_gb (_obj));
+END_METHOD
+
+// (Point)f[3]
+BEGIN_METHOD(Blk_AddPoint, GB_OBJECT point)
+  Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
+  Dwg_Entity_POINT *_obj;
+  dwg_point_3d point;
+  SET_PT1 (point);
+  _obj = dwg_add_POINT (blkhdr, &point);
+  GB.ReturnObject (obj_generic_to_gb (_obj));
+END_METHOD
+
+BEGIN_METHOD(Blk_AddPolyfaceMesh, GB_OBJECT verts; GB_OBJECT faces)
+  Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
+  Dwg_Entity_POLYLINE_PFACE *_obj;
+  GB_ARRAY vertarr = (GB_ARRAY)VARG(verts);
+  unsigned numverts = GB.Array.Count(vertarr) / 3;
+  GB_ARRAY facearr = (GB_ARRAY)VARG(faces);
+  unsigned numfaces = GB.Array.Count(facearr) / 4;
+  dwg_point_3d *verts = calloc (numverts, sizeof (dwg_point_3d));
+  dwg_face *faces = calloc (numfaces, sizeof (dwg_face));
+  if (GB.Array.Count(verts) % 3) { // needs to be dividable by 3
+    GB.Error(GB_ERR_BOUND);
+    GB.ReturnVariant (NULL);
+    return;
+  }
+  if (GB.Array.Count(faces) % 4) { // needs to be dividable by 4
+    GB.Error(GB_ERR_BOUND);
+    GB.ReturnVariant (NULL);
+    return;
+  }
+  for (unsigned i = 0, j = 0; i < numverts; i++) {
+    verts[i].x = *(double*)GB.Array.Get (vertarr, j++);
+    verts[i].y = *(double*)GB.Array.Get (vertarr, j++);
+    verts[i].z = *(double*)GB.Array.Get (vertarr, j++);
+  }
+  for (unsigned i = 0, j = 0; i < numfaces; i++) {
+    faces[i][0] = *(short*)GB.Array.Get (facearr, j++);
+    faces[i][1] = *(short*)GB.Array.Get (facearr, j++);
+    faces[i][2] = *(short*)GB.Array.Get (facearr, j++);
+    faces[i][3] = *(short*)GB.Array.Get (facearr, j++);
+  }
+_obj = dwg_add_POLYLINE_PFACE (blkhdr, numverts, numfaces, verts, faces);
+  GB.ReturnObject (obj_generic_to_gb (_obj));
+END_METHOD
+
+
 // This is backed by block_header iterators,
 // but the key is not a string, but indices or handles. Returns dwg_ent_generic.
 #undef ENTITY_COLLECTION
@@ -347,7 +537,15 @@ GB_DESC token##_Desc[] =                                        \
     */                                                                     \
     GB_METHOD("AddHatch", "_HATCH;", Blk_AddHatch, "(PatternType)i(PatternName)s(Associativity)b(PathObjects)o[]"), \
     GB_METHOD("AddLeader", "_LEADER;", Blk_AddLeader, "(Points)f[](Annotation)o(Type)i"), \
-                                                                           \
+    GB_METHOD("AddLightWeightPolyline", "_LWPOLYLINE;", Blk_AddLightWeightPolyline, "(Points2D)f[]"), \
+    GB_METHOD("AddLine", "_LINE;", Blk_AddLine, "(StartPoint)f[3](EndPoint)f[3]"), \
+    GB_METHOD("AddMInsertBlock", "_MINSERT;", Blk_AddMInsertBlock, "(InsPoint)f[3](Name)s(XScale)f(YScale)f(ZScale)f(Rotation)f(NumRows)i(NumColumns)i(RowSpacing)f(ColumnsSpacing)f"), \
+    GB_METHOD("AddInsertBlock", "_INSERT;", Blk_AddInsertBlock, "(InsPoint)f[3](Name)s(XScale)f(YScale)f(ZScale)f(Rotation)f"), \
+    /* GB_METHOD("AddMLeader", "_MULTILEADER;", Blk_AddMLeader, "(Points)f[](LeaderLineIndex)i"), */ \
+    GB_METHOD("AddMLine", "_MLINE;", Blk_AddMLine, "(InsPoint)f[3](Width)f(Text)s"), \
+    GB_METHOD("AddPoint", "_POINT;", Blk_AddPoint, "(Point)f[3]"), \
+    GB_METHOD("AddPolyfaceMesh", "_POLYLINE_PFACE;", Blk_AddPolyfaceMesh, "(Points)f[](Faces)i[]"), \
+    \
     GB_METHOD("_get", "_CDwgObject;", Entities_get, "(Index)i"),           \
     /*GB_METHOD("_put", NULL, Entities_put, "(Object)v(Index)i"),*/        \
     GB_METHOD("_next", "_CDwgObject;",Entities_next, NULL),                \
