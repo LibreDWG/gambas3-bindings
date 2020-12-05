@@ -54,6 +54,9 @@ END_PROPERTY
   arg.x = *(double*)GB.Array.Get ((GB_ARRAY)VARG(arg), 0); \
   arg.y = *(double*)GB.Array.Get ((GB_ARRAY)VARG(arg), 1); \
   arg.z = *(double*)GB.Array.Get ((GB_ARRAY)VARG(arg), 2)
+#define SET_PT2D(arg) \
+  arg.x = *(double*)GB.Array.Get ((GB_ARRAY)VARG(arg), 0); \
+  arg.y = *(double*)GB.Array.Get ((GB_ARRAY)VARG(arg), 1)
 
 BEGIN_METHOD(Blk_Add3DFace, GB_OBJECT pt1; GB_OBJECT pt2; GB_OBJECT pt3; GB_OBJECT pt4)
   Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
@@ -495,6 +498,99 @@ _obj = dwg_add_POLYLINE_PFACE (blkhdr, numverts, numfaces, verts, faces);
 END_METHOD
 
 
+// (Points3D)f[]
+BEGIN_METHOD(Blk_AddPolyline, GB_OBJECT points3d)
+  Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
+  Dwg_Entity_POLYLINE_2D *_obj;
+  GB_ARRAY points = (GB_ARRAY)VARG(points3d);
+  int num = GB.Array.Count(points) / 3;
+  dwg_point_2d *pts;
+
+  if (GB.Array.Count(points) % 3) { // needs to be dividable by 2
+    GB.Error(GB_ERR_BOUND);
+    GB.ReturnVariant (NULL);
+    return;
+  }
+  pts = calloc (num, sizeof (dwg_point_2d));
+  for (unsigned i = 0, j = 0; i < num; i++) {
+    pts[i].x = *(double*)GB.Array.Get (points, j++);
+    pts[i].y = *(double*)GB.Array.Get (points, j++);
+    j++; // ignore each z
+  }
+  _obj = dwg_add_POLYLINE_2D (blkhdr, num, pts);
+  GB.ReturnObject (obj_generic_to_gb (_obj));
+END_METHOD
+
+// (Center)f[3](Width)f(Height)f
+BEGIN_METHOD(Blk_AddPViewport, GB_STRING name; GB_OBJECT center; GB_FLOAT width; GB_FLOAT height)
+  Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr; // FIXME: must be PaperSpace
+  Dwg_Entity_VIEWPORT *_obj;
+  char *name = STRING(name);
+  double width = (double)VARG(width);
+  double height = (double)VARG(height);
+  dwg_point_3d center;
+  SET_PT1 (center);
+  _obj = dwg_add_VIEWPORT (blkhdr, name /*, &center, width, height*/);
+  memcpy (&_obj->center, &center, sizeof (dwg_point_3d));
+  _obj->width = width;
+  _obj->height = height;
+  GB.ReturnObject (obj_generic_to_gb (_obj));
+END_METHOD
+
+// (FileName)s(InsPt)f[3](Scalefactor)f(RotationAngle)f
+BEGIN_METHOD(Blk_AddRaster, GB_STRING file_path; GB_OBJECT ins_pt;
+                            GB_FLOAT scale_factor; GB_FLOAT rotation_angle)
+  Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
+  Dwg_Entity_IMAGE *_obj;
+  char *file_path = STRING(file_path);
+  double scale_factor = (double)VARG(scale_factor);
+  double rotation_angle = (double)VARG(rotation_angle);
+  dwg_point_3d ins_pt;
+  SET_PT1 (ins_pt);
+  _obj = dwg_add_IMAGE (blkhdr, file_path, &ins_pt, scale_factor, rotation_angle);
+  GB.ReturnObject (obj_generic_to_gb (_obj));
+END_METHOD
+
+// (Point1)f[3](Point2)f[3]
+BEGIN_METHOD(Blk_AddRay, GB_OBJECT pt1; GB_OBJECT pt2)
+  Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
+  Dwg_Entity_RAY *_obj;
+  dwg_point_3d pt1, pt2;
+  SET_PT1 (pt1);
+  SET_PT1 (pt2);
+  _obj = dwg_add_RAY (blkhdr, &pt1, &pt2);
+  GB.ReturnObject (obj_generic_to_gb (_obj));
+END_METHOD
+
+// (Name)s(ins_pt)f[3](scale_factor)f(oblique)f
+BEGIN_METHOD(Blk_AddShape, GB_STRING name; GB_OBJECT ins_pt;
+                           GB_FLOAT scale_factor; GB_FLOAT oblique_angle)
+  Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
+  Dwg_Entity_SHAPE *_obj;
+  char *name = STRING(name);
+  double scale_factor = (double)VARG(scale_factor);
+  double oblique_angle = (double)VARG(oblique_angle);
+  dwg_point_3d ins_pt;
+  SET_PT1 (ins_pt);
+  _obj = dwg_add_SHAPE (blkhdr, name, &ins_pt, scale_factor, oblique_angle);
+  GB.ReturnObject (obj_generic_to_gb (_obj));
+END_METHOD
+
+// (pt1)f[3](pt2)f[3](pt3)f[3](pt4)f[3]
+BEGIN_METHOD(Blk_AddSolid, GB_OBJECT pt1; GB_OBJECT pt2; GB_OBJECT pt3; GB_OBJECT pt4)
+  Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
+  Dwg_Entity_SOLID *_obj;
+  dwg_point_3d pt1;
+  dwg_point_2d pt2, pt3, pt4;
+  SET_PT1 (pt1);
+  SET_PT2D (pt2);
+  SET_PT2D (pt3);
+  SET_PT2D (pt4);
+  _obj = dwg_add_SOLID (blkhdr, &pt1, &pt2, &pt3, &pt4);
+  GB.ReturnObject (obj_generic_to_gb (_obj));
+END_METHOD
+
+
 // This is backed by block_header iterators,
 // but the key is not a string, but indices or handles. Returns dwg_ent_generic.
 #undef ENTITY_COLLECTION
@@ -545,6 +641,14 @@ GB_DESC token##_Desc[] =                                        \
     GB_METHOD("AddMLine", "_MLINE;", Blk_AddMLine, "(InsPoint)f[3](Width)f(Text)s"), \
     GB_METHOD("AddPoint", "_POINT;", Blk_AddPoint, "(Point)f[3]"), \
     GB_METHOD("AddPolyfaceMesh", "_POLYLINE_PFACE;", Blk_AddPolyfaceMesh, "(Points)f[](Faces)i[]"), \
+    GB_METHOD("AddPolyline", "_POLYLINE_2D;", Blk_AddPolyline, "(Points3D)f[]"), \
+    GB_METHOD("AddPViewport", "_VIEWPORT;", Blk_AddPViewport, "(Center)f[3](Width)f(Height)f"), \
+    GB_METHOD("AddRaster", "_IMAGE;", Blk_AddRaster, "(FileName)s(InsPt)f[3](Scalefactor)f(RotationAngle)f"), \
+    GB_METHOD("AddRay", "_RAY;", Blk_AddRay, "(Point1)f[3](Point2)f[3]"),  \
+    /*GB_METHOD("AddRevolvedSolid", "_ACSH_REVOLVE_CLASS;", Blk_AddRevolvedSolid, "(Profile)o(axis_pt)f[3](axis_dir)f[3](angle)f"), \
+    GB_METHOD("AddSection", "_SECTIONOBJECT;", Blk_AddSection, "(FromPoint)f[3](ToPoint)f[3](PlaneVector)f[3]"), */ \
+    GB_METHOD("AddShape", "_SHAPE;", Blk_AddShape, "(Name)s(ins_pt)f[3](scale_factor)f(oblique_angle)f"), \
+    GB_METHOD("AddSolid", "_SOLID;", Blk_AddSolid, "(pt1)f[3](pt2)f[3](pt3)f[3](pt4)f[3]"), \
     \
     GB_METHOD("_get", "_CDwgObject;", Entities_get, "(Index)i"),           \
     /*GB_METHOD("_put", NULL, Entities_put, "(Object)v(Index)i"),*/        \
