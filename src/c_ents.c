@@ -50,15 +50,19 @@ END_PROPERTY
   tgt.x = *(double*)GB.Array.Get ((GB_ARRAY)VARG(arg), 0); \
   tgt.y = *(double*)GB.Array.Get ((GB_ARRAY)VARG(arg), 1); \
   tgt.z = *(double*)GB.Array.Get ((GB_ARRAY)VARG(arg), 2)
+#define SET_PT1(arg) \
+  arg.x = *(double*)GB.Array.Get ((GB_ARRAY)VARG(arg), 0); \
+  arg.y = *(double*)GB.Array.Get ((GB_ARRAY)VARG(arg), 1); \
+  arg.z = *(double*)GB.Array.Get ((GB_ARRAY)VARG(arg), 2)
 
 BEGIN_METHOD(Blk_Add3DFace, GB_OBJECT pt1; GB_OBJECT pt2; GB_OBJECT pt3; GB_OBJECT pt4)
   Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
   Dwg_Entity__3DFACE *_obj;
   dwg_point_3d pt1, pt2, pt3, pt4;
-  SET_PT (pt1, pt1);
-  SET_PT (pt2, pt2);
-  SET_PT (pt3, pt3);
-  SET_PT (pt4, pt3);
+  SET_PT1 (pt1);
+  SET_PT1 (pt2);
+  SET_PT1 (pt3);
+  SET_PT1 (pt4);
   _obj = dwg_add_3DFACE (blkhdr, &pt1, &pt2, &pt3, &pt4);
   GB.ReturnObject (obj_generic_to_gb (_obj));
 END_METHOD
@@ -108,8 +112,140 @@ BEGIN_METHOD(Blk_AddArc, GB_OBJECT center; GB_FLOAT radius; GB_FLOAT start_angle
   double start_angle = (double)VARG(start_angle);
   double end_angle = (double)VARG(end_angle);
   dwg_point_3d center;
-  SET_PT (center, center);
+  SET_PT1 (center);
   _obj = dwg_add_ARC (blkhdr, &center, radius, start_angle, end_angle);
+  GB.ReturnObject (obj_generic_to_gb (_obj));
+END_METHOD
+
+// (Center)f[3](Radius)f
+BEGIN_METHOD(Blk_AddCircle, GB_OBJECT center; GB_FLOAT radius)
+  Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
+  Dwg_Entity_CIRCLE *_obj;
+  double radius = (double)VARG(radius);
+  dwg_point_3d center;
+  SET_PT1 (center);
+  _obj = dwg_add_CIRCLE (blkhdr, &center, radius);
+  GB.ReturnObject (obj_generic_to_gb (_obj));
+END_METHOD
+
+// (AngleVertex)f[3](FirstEndPoint)f[3](SecondEndPoint)f[3](TextPoint)f[3]
+BEGIN_METHOD(Blk_AddDim3PointAngular, GB_OBJECT center; GB_OBJECT xline1_pt; GB_OBJECT xline2_pt;
+                                      GB_OBJECT text_midpt)
+  Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
+  Dwg_Entity_DIMENSION_ANG3PT *_obj;
+  dwg_point_3d center, xline1_pt, xline2_pt, text_midpt;
+  SET_PT1 (center);
+  SET_PT1 (xline1_pt);
+  SET_PT1 (xline2_pt);
+  SET_PT1 (text_midpt);
+  _obj = dwg_add_DIMENSION_ANG3PT (blkhdr, &center, &xline1_pt, &xline2_pt, &text_midpt);
+  GB.ReturnObject (obj_generic_to_gb (_obj));
+END_METHOD
+
+BEGIN_METHOD(Blk_AddDimAligned, GB_OBJECT xline1_pt; GB_OBJECT xline2_pt;
+                                GB_OBJECT text_midpt)
+  Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
+  Dwg_Entity_DIMENSION_ALIGNED *_obj;
+  dwg_point_3d xline1_pt, xline2_pt, text_midpt;
+  SET_PT1 (xline1_pt);
+  SET_PT1 (xline2_pt);
+  SET_PT1 (text_midpt);
+  _obj = dwg_add_DIMENSION_ALIGNED (blkhdr, &xline1_pt, &xline2_pt, &text_midpt);
+  GB.ReturnObject (obj_generic_to_gb (_obj));
+END_METHOD
+
+BEGIN_METHOD(Blk_AddDimAngular, GB_OBJECT center_pt; GB_OBJECT xline1end_pt;
+                                GB_OBJECT xline2end_pt; GB_OBJECT text_midpt)
+  Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
+  Dwg_Entity_DIMENSION_ANG2LN *_obj;
+  dwg_point_3d center_pt, xline1end_pt, xline2end_pt, text_midpt;
+  SET_PT1 (center_pt);
+  SET_PT1 (xline1end_pt);
+  SET_PT1 (xline2end_pt);
+  SET_PT1 (text_midpt);
+  _obj = dwg_add_DIMENSION_ANG2LN (blkhdr, &center_pt, &xline1end_pt, &xline2end_pt, &text_midpt);
+  GB.ReturnObject (obj_generic_to_gb (_obj));
+END_METHOD
+
+/*
+BEGIN_METHOD(Blk_AddDimArc, GB_OBJECT center; GB_OBJECT xline1_pt; GB_OBJECT xline2_pt;
+                            GB_OBJECT arc_pt)
+  Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
+  Dwg_Entity_ARC_DIMENSION *_obj;
+  dwg_point_3d center, xline1_pt, xline2_pt, arc_pt;
+  SET_PT1 (center);
+  SET_PT1 (xline1_pt);
+  SET_PT1 (xline2_pt);
+  SET_PT1 (arc_pt);
+  _obj = dwg_add_ARC_DIMENSION (blkhdr, &center, &xline1_pt, &xline2_pt, &arc_pt);
+  GB.ReturnObject (obj_generic_to_gb (_obj));
+END_METHOD
+*/
+
+BEGIN_METHOD(Blk_AddDimDiametric, GB_OBJECT chord_pt; GB_OBJECT far_chord_pt;
+                                  GB_FLOAT leader_len)
+  Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
+  Dwg_Entity_DIMENSION_DIAMETER *_obj;
+  double leader_len = (double)VARG(leader_len);
+  dwg_point_3d chord_pt, far_chord_pt;
+  SET_PT1 (chord_pt);
+  SET_PT1 (far_chord_pt);
+  _obj = dwg_add_DIMENSION_DIAMETER (blkhdr, &chord_pt, &far_chord_pt, leader_len);
+  GB.ReturnObject (obj_generic_to_gb (_obj));
+END_METHOD
+
+BEGIN_METHOD(Blk_AddDimOrdinate, GB_OBJECT feature_location_pt; GB_OBJECT leader_endpt;
+                                 GB_BOOLEAN use_x_axis)
+  Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
+  Dwg_Entity_DIMENSION_ORDINATE *_obj;
+  bool use_x_axis = (bool)VARG(use_x_axis);
+  dwg_point_3d feature_location_pt, leader_endpt;
+  SET_PT1 (feature_location_pt);
+  SET_PT1 (leader_endpt);
+  _obj = dwg_add_DIMENSION_ORDINATE (blkhdr, &feature_location_pt, &leader_endpt, use_x_axis);
+  GB.ReturnObject (obj_generic_to_gb (_obj));
+END_METHOD
+
+// (Center)f[3](ChordPoint)f[3](LeaderLength)f
+BEGIN_METHOD(Blk_AddDimRadial, GB_OBJECT center_pt; GB_OBJECT chord_pt;
+                               GB_FLOAT leader_len)
+  Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
+  Dwg_Entity_DIMENSION_RADIUS *_obj;
+  double leader_len = (double)VARG(leader_len);
+  dwg_point_3d center_pt, chord_pt;
+  SET_PT1 (center_pt);
+  SET_PT1 (chord_pt);
+  _obj = dwg_add_DIMENSION_RADIUS (blkhdr, &center_pt, &chord_pt, leader_len);
+  GB.ReturnObject (obj_generic_to_gb (_obj));
+END_METHOD
+
+// (Center)f[3](ChordPoint)f[3](LeaderLength)f
+BEGIN_METHOD(Blk_AddDimRadialLarge, GB_OBJECT center_pt; GB_OBJECT first_arc_pt;
+                                    GB_OBJECT ovr_center_pt; GB_OBJECT jog_pt;
+                                    GB_FLOAT jog_angle)
+  Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
+  Dwg_Entity_LARGE_RADIAL_DIMENSION *_obj;
+  dwg_point_3d center_pt, first_arc_pt, ovr_center_pt, jog_pt;
+  double jog_angle = (double)VARG(jog_angle);
+  SET_PT1 (center_pt);
+  SET_PT1 (first_arc_pt);
+  SET_PT1 (ovr_center_pt);
+  SET_PT1 (jog_pt);
+  _obj = dwg_add_LARGE_RADIAL_DIMENSION (blkhdr, &center_pt, &first_arc_pt, &ovr_center_pt,
+                                         &jog_pt, jog_angle);
+  GB.ReturnObject (obj_generic_to_gb (_obj));
+END_METHOD
+
+BEGIN_METHOD(Blk_AddDimRotated, GB_OBJECT xline1_pt; GB_OBJECT xline2_pt;
+                                GB_OBJECT def_pt; GB_FLOAT rotation_angle)
+  Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
+  Dwg_Entity_DIMENSION_LINEAR *_obj;
+  dwg_point_3d xline1_pt, xline2_pt, def_pt;
+  double rotation_angle = (double)VARG(rotation_angle);
+  SET_PT1 (xline1_pt);
+  SET_PT1 (xline2_pt);
+  SET_PT1 (def_pt);
+  _obj = dwg_add_DIMENSION_LINEAR (blkhdr, &xline1_pt, &xline2_pt, &def_pt, rotation_angle);
   GB.ReturnObject (obj_generic_to_gb (_obj));
 END_METHOD
 
@@ -131,6 +267,21 @@ GB_DESC token##_Desc[] =                                        \
     GB_METHOD("AddAttribute", "_ATTDEF;", Blk_AddAttribute, "(Height)f(Mode)i(Prompt)s(InsPoint)f[3](Tag)s(Value)s"), \
     GB_METHOD("AddBox", "_3DSOLID;", Blk_AddBox, "(Origin)f[3](Length)f(Width)f(Height)f"), \
     */                                                                     \
+    GB_METHOD("AddCircle", "_CIRCLE;", Blk_AddCircle, "(Center)f[3](Radius)f"), \
+    /*                                                                     \
+    GB_METHOD("AddCone", "_ACSH_CONE_CLASS;", Blk_AddCone, "(Center)f[3](BaseRadius)f(Height)f"), \
+    GB_METHOD("AddCustomObject", "o", Blk_AddCustomObject, "(ClasseName)s"), \
+    GB_METHOD("AddCylinder", "_ACSH_CYLINDER_CLASS;", Blk_AddCylinder, "(Center)f[3](Radius)f(Height)f"), \
+    */                                                                     \
+    GB_METHOD("AddDim3PointAngular", "_DIMENSION_ANG3PT;", Blk_AddDim3PointAngular, "(AngleVertex)f[3](FirstEndPoint)f[3](SecondEndPoint)f[3](TextPoint)f[3]"), \
+    GB_METHOD("AddDimAligned", "_DIMENSION_ALIGNED;", Blk_AddDimAligned, "(FirstEndPoint)f[3](SecondEndPoint)f[3](TextPoint)f[3]"), \
+    GB_METHOD("AddDimAngular", "_DIMENSION_ANG2LN;", Blk_AddDimAngular, "(CenterPoint)f[3](FirstEndPoint)f[3](SecondEndPoint)f[3](TextPoint)f[3]"), \
+    /*GB_METHOD("AddDimArc", "_ARC_DIMENSION;", Blk_AddDimArc, "(Center)f[3](FirstEndPoint)f[3](SecondEndPoint)f[3](ArcPoint)f[3]"),*/ \
+    GB_METHOD("AddDimDiametric", "_DIMENSION_DIAMETER;", Blk_AddDimDiametric, "(FirstEndPoint)f[3](SecondEndPoint)f[3](TextPoint)f[3]"), \
+    GB_METHOD("AddDimOrdinate", "_DIMENSION_ORDINATE;", Blk_AddDimOrdinate, "(DefPoint)f[3](LeaderEndPoint)f[3](UseXAxis)b"), \
+    GB_METHOD("AddDimRadial", "_DIMENSION_RADIUS;", Blk_AddDimRadial, "(Center)f[3](ChordPoint)f[3](LeaderLength)f"), \
+    GB_METHOD("AddDimadialLarge", "_DIMENSION_LARGE_RADIAL_DIMENSION;", Blk_AddDimRadialLarge, "(Center)f[3](ChordPoint)f[3](OverrideCenter)f[3](JogPoint)f[3](JogAngle)f"), \
+    GB_METHOD("AddDimRotated", "_DIMENSION_LINEAR;", Blk_AddDimRotated, "(XLine1Point)f[3](XLine2Point)f[3](DefPoint)f[3](RotationAngle)f"), \
                                                                            \
     GB_METHOD("_get", "_CDwgObject;", Entities_get, "(Index)i"),           \
     /*GB_METHOD("_put", NULL, Entities_put, "(Object)v(Index)i"),*/        \
