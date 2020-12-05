@@ -497,7 +497,6 @@ _obj = dwg_add_POLYLINE_PFACE (blkhdr, numverts, numfaces, verts, faces);
   GB.ReturnObject (obj_generic_to_gb (_obj));
 END_METHOD
 
-
 // (Points3D)f[]
 BEGIN_METHOD(Blk_AddPolyline, GB_OBJECT points3d)
   Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
@@ -590,6 +589,236 @@ BEGIN_METHOD(Blk_AddSolid, GB_OBJECT pt1; GB_OBJECT pt2; GB_OBJECT pt3; GB_OBJEC
   GB.ReturnObject (obj_generic_to_gb (_obj));
 END_METHOD
 
+// (fit_pts)f[](beg_tan_vec)f[3](end_tan_vec)f[3]
+BEGIN_METHOD(Blk_AddSpline, GB_OBJECT fit_pts; GB_OBJECT beg_tan_vec; GB_OBJECT end_tan_vec)
+  Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
+  Dwg_Entity_SPLINE *_obj;
+  GB_ARRAY fitpts_arr = (GB_ARRAY)VARG(fit_pts);
+  int num = GB.Array.Count(fitpts_arr) / 3;
+  dwg_point_3d *pts, beg_tan_vec, end_tan_vec;
+
+  if (GB.Array.Count(fitpts_arr) % 3) { // needs to be dividable by 3
+    GB.Error(GB_ERR_BOUND);
+    GB.ReturnVariant (NULL);
+    return;
+  }
+  SET_PT1 (beg_tan_vec);
+  SET_PT1 (end_tan_vec);
+  pts = calloc (num, sizeof (dwg_point_3d));
+  for (unsigned i = 0, j = 0; i < num; i++) {
+    pts[i].x = *(double*)GB.Array.Get (fitpts_arr, j++);
+    pts[i].y = *(double*)GB.Array.Get (fitpts_arr, j++);
+    pts[i].z = *(double*)GB.Array.Get (fitpts_arr, j++);
+  }
+  _obj = dwg_add_SPLINE (blkhdr, num, pts, &beg_tan_vec, &end_tan_vec);
+  GB.ReturnObject (obj_generic_to_gb (_obj));
+END_METHOD
+
+// (text)s(ins_pt)f[3](height)f
+BEGIN_METHOD(Blk_AddText, GB_STRING text; GB_OBJECT ins_pt; GB_FLOAT height)
+  Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
+  Dwg_Entity_TEXT *_obj;
+  dwg_point_3d ins_pt;
+  double height = (double)VARG(height);
+  char *text = STRING(text);
+  _obj = dwg_add_TEXT (blkhdr, text, &ins_pt, height);
+  GB.ReturnObject (obj_generic_to_gb (_obj));
+END_METHOD
+
+// (text)s(ins_pt)f[3](x_direction)f[3]
+BEGIN_METHOD(Blk_AddTolerance, GB_STRING text; GB_OBJECT ins_pt; GB_OBJECT x_direction)
+  Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
+  Dwg_Entity_TOLERANCE *_obj;
+  dwg_point_3d ins_pt, x_direction;
+  char *text = STRING(text);
+  SET_PT1 (ins_pt);
+  SET_PT1 (x_direction);
+  _obj = dwg_add_TOLERANCE (blkhdr, text, &ins_pt, &x_direction);
+  GB.ReturnObject (obj_generic_to_gb (_obj));
+END_METHOD
+
+// (points3d)f[]
+BEGIN_METHOD(Blk_AddTrace, GB_OBJECT points3d)
+  Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
+  Dwg_Entity_TRACE *_obj;
+  GB_ARRAY ptsarr = (GB_ARRAY)VARG(points3d);
+  unsigned j = 0;
+  dwg_point_3d pt1;
+  dwg_point_2d pt2, pt3, pt4;
+  if (GB.Array.Count(ptsarr) != 12) {
+    GB.Error(GB_ERR_BOUND);
+    GB.ReturnVariant (NULL);
+    return;
+  }
+  pt1.x = *(double*)GB.Array.Get (ptsarr, j++);
+  pt1.y = *(double*)GB.Array.Get (ptsarr, j++);
+  pt1.z = *(double*)GB.Array.Get (ptsarr, j++);
+
+  pt2.x = *(double*)GB.Array.Get (ptsarr, j++);
+  pt2.y = *(double*)GB.Array.Get (ptsarr, j++); j++;
+  pt3.x = *(double*)GB.Array.Get (ptsarr, j++);
+  pt3.y = *(double*)GB.Array.Get (ptsarr, j++); j++;
+  pt4.x = *(double*)GB.Array.Get (ptsarr, j++);
+  pt4.y = *(double*)GB.Array.Get (ptsarr, j++); j++;
+
+  _obj = dwg_add_TRACE (blkhdr, &pt1, &pt2, &pt3, &pt4);
+  GB.ReturnObject (obj_generic_to_gb (_obj));
+END_METHOD
+
+// (Point1)f[3](Point2)f[3]
+BEGIN_METHOD(Blk_AddXLine, GB_OBJECT pt1; GB_OBJECT pt2)
+  Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
+  Dwg_Entity_XLINE *_obj;
+  dwg_point_3d pt1, pt2;
+  SET_PT1 (pt1);
+  SET_PT1 (pt2);
+  _obj = dwg_add_RAY (blkhdr, &pt1, &pt2);
+  GB.ReturnObject (obj_generic_to_gb (_obj));
+END_METHOD
+
+/* Not yet implemented 3DSOLID entities */
+
+// not yet. (origin)f[3](length)f(width)f(height)f
+BEGIN_METHOD(Blk_AddBox, GB_OBJECT origin; GB_FLOAT length; GB_FLOAT width; GB_FLOAT height)
+  Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
+  Dwg_Entity_3DSOLID *_obj;
+  dwg_point_3d origin;
+  double length = (double)VARG(length);
+  double width = (double)VARG(width);
+  double height = (double)VARG(height);
+  SET_PT1 (origin);
+#ifdef HAVE_DWG_ADD_BOX
+  _obj = dwg_add_BOX (blkhdr, &origin, length, width, height);
+  GB.ReturnObject (obj_generic_to_gb (_obj));
+#else
+  GB.Error (GB_ERR_TYPE);
+  GB.ReturnVariant (NULL);
+#endif
+END_METHOD
+
+// not yet. (center)f[3](base_radius)f(height)f
+BEGIN_METHOD(Blk_AddCone, GB_OBJECT center; GB_FLOAT base_radius; GB_FLOAT height)
+  Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
+  Dwg_Entity_3DSOLID *_obj;
+  dwg_point_3d center;
+  double base_radius = (double)VARG(base_radius);
+  double height = (double)VARG(height);
+  SET_PT1 (center);
+#ifdef HAVE_DWG_ADD_CONE
+  _obj = dwg_add_CONE (blkhdr, &center, base_radius, height);
+  GB.ReturnObject (obj_generic_to_gb (_obj));
+#else
+  GB.Error (GB_ERR_TYPE);
+  GB.ReturnVariant (NULL);
+#endif
+END_METHOD
+
+BEGIN_METHOD(Blk_AddCylinder, GB_OBJECT center; GB_FLOAT radius;
+                              GB_FLOAT height)
+  Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
+  Dwg_Entity_3DSOLID *_obj;
+  dwg_point_3d center;
+  double radius = (double)VARG(radius);
+  double height = (double)VARG(height);
+  SET_PT1 (center);
+#ifdef HAVE_DWG_ADD_CYLINDER
+  _obj = dwg_add_CYLINDER (blkhdr, &center, radius, height);
+  GB.ReturnObject (obj_generic_to_gb (_obj));
+#else
+  GB.Error (GB_ERR_TYPE);
+  GB.ReturnVariant (NULL);
+#endif
+END_METHOD
+
+// not yet. (center)f[3](base_radius)f(height)f
+BEGIN_METHOD(Blk_AddEllipticalCone, GB_OBJECT center; GB_FLOAT major_radius;
+                                    GB_FLOAT minor_radius; GB_FLOAT height)
+  Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
+  Dwg_Entity_3DSOLID *_obj;
+  dwg_point_3d center;
+  double major_radius = (double)VARG(major_radius);
+  double minor_radius = (double)VARG(minor_radius);
+  double height = (double)VARG(height);
+  SET_PT1 (center);
+#ifdef HAVE_DWG_ADD_ELLIPTICAL_CONE
+  _obj = dwg_add_ELLIPTICAL_CONE (blkhdr, &center, major_radius, minor_radius, height);
+  GB.ReturnObject (obj_generic_to_gb (_obj));
+#else
+  GB.Error (GB_ERR_TYPE);
+  GB.ReturnVariant (NULL);
+#endif
+END_METHOD
+
+// not yet. (center)f[3](major_radius)(major_radius)ff(height)f
+BEGIN_METHOD(Blk_AddEllipticalCylinder, GB_OBJECT center; GB_FLOAT major_radius;
+                                        GB_FLOAT minor_radius; GB_FLOAT height)
+  Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
+  Dwg_Entity_3DSOLID *_obj;
+  dwg_point_3d center;
+  double major_radius = (double)VARG(major_radius);
+  double minor_radius = (double)VARG(minor_radius);
+  double height = (double)VARG(height);
+  SET_PT1 (center);
+#ifdef HAVE_DWG_ADD_ELLIPTICAL_CYLINDER
+  _obj = dwg_add_ELLIPTICAL_CYLINDER (blkhdr, &center, major_radius, minor_radius, height);
+  GB.ReturnObject (obj_generic_to_gb (_obj));
+#else
+  GB.Error (GB_ERR_TYPE);
+  GB.ReturnVariant (NULL);
+#endif
+END_METHOD
+
+// not yet. (center)f[3](length)f(width)f(height)f
+BEGIN_METHOD(Blk_AddWedge, GB_OBJECT center; GB_FLOAT length; GB_FLOAT width; GB_FLOAT height)
+  Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
+  Dwg_Entity_3DSOLID *_obj;
+  dwg_point_3d center;
+  double length = (double)VARG(length);
+  double width = (double)VARG(width);
+  double height = (double)VARG(height);
+  SET_PT1 (center);
+#ifdef HAVE_DWG_ADD_WEDGE
+  _obj = dwg_add_WEDGE (blkhdr, &center, length, width, height);
+  GB.ReturnObject (obj_generic_to_gb (_obj));
+#else
+  GB.Error (GB_ERR_TYPE);
+  GB.ReturnVariant (NULL);
+#endif
+END_METHOD
+
+/*GB_METHOD("AddSphere", "_3DSOLID;", Blk_AddSphere, "(Center)f[3](Radius)f"),*/ \
+// not yet. (Center)f[3](Radius)f
+BEGIN_METHOD(Blk_AddSphere, GB_OBJECT center; GB_FLOAT radius)
+  Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
+  Dwg_Entity_3DSOLID *_obj;
+  dwg_point_3d center;
+  double radius = (double)VARG(radius);
+  SET_PT1 (center);
+#ifdef HAVE_DWG_ADD_SPHERE
+  _obj = dwg_add_SPHERE (blkhdr, &center, radius);
+  GB.ReturnObject (obj_generic_to_gb (_obj));
+#else
+  GB.Error (GB_ERR_TYPE);
+  GB.ReturnVariant (NULL);
+#endif
+END_METHOD
+
+// not yet. (Center)f[3](TorusRadius)f(TubeRadius)f
+BEGIN_METHOD(Blk_AddTorus, GB_OBJECT center; GB_FLOAT torus_radius; GB_FLOAT tube_radius)
+  Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
+  Dwg_Entity_3DSOLID *_obj;
+  dwg_point_3d center;
+  double torus_radius = (double)VARG(torus_radius);
+  double tube_radius = (double)VARG(tube_radius);
+  SET_PT1 (center);
+#ifdef HAVE_DWG_ADD_TORUS
+  _obj = dwg_add_TORUS (blkhdr, &center, torus_radius, tube_radius);
+  GB.ReturnObject (obj_generic_to_gb (_obj));
+#else
+  GB.Error (GB_ERR_TYPE);
+  GB.ReturnVariant (NULL);
+#endif
+END_METHOD
 
 // This is backed by block_header iterators,
 // but the key is not a string, but indices or handles. Returns dwg_ent_generic.
@@ -605,16 +834,12 @@ GB_DESC token##_Desc[] =                                        \
     GB_METHOD("Add3DMesh", "_POLYLINE_MESH;", Blk_Add3DMesh, "(M)i(N)i(PointsMatrix)f[16]"), \
     GB_METHOD("Add3DPoly", "_POLYLINE_3D;", Blk_Add3DPoly, "(Points)f[]"), \
     GB_METHOD("AddArc", "_ARC;", Blk_AddArc, "(Center)f[3](Radius)f(StartAngle)f(EndAngle)f"), \
-    /* \
-    GB_METHOD("AddAttribute", "_ATTDEF;", Blk_AddAttribute, "(Height)f(Mode)i(Prompt)s(InsPoint)f[3](Tag)s(Value)s"), \
-    GB_METHOD("AddBox", "_ACSH_BOX_CLASS;", Blk_AddBox, "(Origin)f[3](Length)f(Width)f(Height)f"), \
-    */                                                                     \
+    /*GB_METHOD("AddAttribute", "_ATTDEF;", Blk_AddAttribute, "(Height)f(Mode)i(Prompt)s(InsPoint)f[3](Tag)s(Value)s"),*/                                                                  \
+    GB_METHOD("AddBox", "_3DSOLID;", Blk_AddBox, "(Origin)f[3](Length)f(Width)f(Height)f"), \
     GB_METHOD("AddCircle", "_CIRCLE;", Blk_AddCircle, "(Center)f[3](Radius)f"), \
-    /*                                                                     \
-    GB_METHOD("AddCone", "_ACSH_CONE_CLASS;", Blk_AddCone, "(Center)f[3](BaseRadius)f(Height)f"), \
-    GB_METHOD("AddCustomObject", "o", Blk_AddCustomObject, "(ClasseName)s"), \
-    GB_METHOD("AddCylinder", "_ACSH_CYLINDER_CLASS;", Blk_AddCylinder, "(Center)f[3](Radius)f(Height)f"), \
-    */                                                                     \
+    GB_METHOD("AddCone", "_3DSOLID;", Blk_AddCone, "(Center)f[3](BaseRadius)f(Height)f"), \
+    /*GB_METHOD("AddCustomObject", "o", Blk_AddCustomObject, "(ClasseName)s"),*/ \
+    GB_METHOD("AddCylinder", "_3DSOLID;", Blk_AddCylinder, "(Center)f[3](Radius)f(Height)f"), \
     GB_METHOD("AddDim3PointAngular", "_DIMENSION_ANG3PT;", Blk_AddDim3PointAngular, "(AngleVertex)f[3](FirstEndPoint)f[3](SecondEndPoint)f[3](TextPoint)f[3]"), \
     GB_METHOD("AddDimAligned", "_DIMENSION_ALIGNED;", Blk_AddDimAligned, "(FirstEndPoint)f[3](SecondEndPoint)f[3](TextPoint)f[3]"), \
     GB_METHOD("AddDimAngular", "_DIMENSION_ANG2LN;", Blk_AddDimAngular, "(CenterPoint)f[3](FirstEndPoint)f[3](SecondEndPoint)f[3](TextPoint)f[3]"), \
@@ -622,12 +847,12 @@ GB_DESC token##_Desc[] =                                        \
     GB_METHOD("AddDimDiametric", "_DIMENSION_DIAMETER;", Blk_AddDimDiametric, "(FirstEndPoint)f[3](SecondEndPoint)f[3](TextPoint)f[3]"), \
     GB_METHOD("AddDimOrdinate", "_DIMENSION_ORDINATE;", Blk_AddDimOrdinate, "(DefPoint)f[3](LeaderEndPoint)f[3](UseXAxis)b"), \
     GB_METHOD("AddDimRadial", "_DIMENSION_RADIUS;", Blk_AddDimRadial, "(Center)f[3](ChordPoint)f[3](LeaderLength)f"), \
-    GB_METHOD("AddDimadialLarge", "_DIMENSION_LARGE_RADIAL_DIMENSION;", Blk_AddDimRadialLarge, "(Center)f[3](ChordPoint)f[3](OverrideCenter)f[3](JogPoint)f[3](JogAngle)f"), \
+    GB_METHOD("AddDimRadialLarge", "_DIMENSION_LARGE_RADIAL_DIMENSION;", Blk_AddDimRadialLarge, "(Center)f[3](ChordPoint)f[3](OverrideCenter)f[3](JogPoint)f[3](JogAngle)f"), \
     GB_METHOD("AddDimRotated", "_DIMENSION_LINEAR;", Blk_AddDimRotated, "(XLine1Point)f[3](XLine2Point)f[3](DefPoint)f[3](RotationAngle)f"), \
     GB_METHOD("AddEllipse", "_ELLIPSE;", Blk_AddEllipse, "(Center)f[3](MajorAxis)f(RadiusRatio)f"), \
-    /*                                                                     \
     GB_METHOD("AddEllipticalCone", "_3DSOLID;", Blk_AddEllipticalCone, "(Center)f[3](MajorRadius)f(MinorRadius)f(Height)f"), \
     GB_METHOD("AddEllipticalCylinder", "_3DSOLID;", Blk_AddEllipticalCylinder, "(Center)f[3](MajorRadius)f(MinorRadius)f(Height)f"), \
+    /*                                                                  \
     GB_METHOD("AddExtrudedSolid", "_3DSOLID;", Blk_AddExtrudedSolid, "(Profile)o(Height)f(TaperAngle)f"), \
     GB_METHOD("AddExtrudedSolidAlongPath", "_3DSOLID;", Blk_AddExtrudedSolidAlongPath, "(Profile)o(PathObj)o"), \
     */                                                                     \
@@ -638,17 +863,28 @@ GB_DESC token##_Desc[] =                                        \
     GB_METHOD("AddMInsertBlock", "_MINSERT;", Blk_AddMInsertBlock, "(InsPoint)f[3](Name)s(XScale)f(YScale)f(ZScale)f(Rotation)f(NumRows)i(NumColumns)i(RowSpacing)f(ColumnsSpacing)f"), \
     GB_METHOD("AddInsertBlock", "_INSERT;", Blk_AddInsertBlock, "(InsPoint)f[3](Name)s(XScale)f(YScale)f(ZScale)f(Rotation)f"), \
     /* GB_METHOD("AddMLeader", "_MULTILEADER;", Blk_AddMLeader, "(Points)f[](LeaderLineIndex)i"), */ \
-    GB_METHOD("AddMLine", "_MLINE;", Blk_AddMLine, "(InsPoint)f[3](Width)f(Text)s"), \
+    GB_METHOD("AddMLine", "_MLINE;", Blk_AddMLine, "(points3d)f[]"), \
+    GB_METHOD("AddMText", "_MTEXT;", Blk_AddMText, "(InsPoint)f[3](Width)f(Text)s"), \
     GB_METHOD("AddPoint", "_POINT;", Blk_AddPoint, "(Point)f[3]"), \
     GB_METHOD("AddPolyfaceMesh", "_POLYLINE_PFACE;", Blk_AddPolyfaceMesh, "(Points)f[](Faces)i[]"), \
     GB_METHOD("AddPolyline", "_POLYLINE_2D;", Blk_AddPolyline, "(Points3D)f[]"), \
     GB_METHOD("AddPViewport", "_VIEWPORT;", Blk_AddPViewport, "(Center)f[3](Width)f(Height)f"), \
     GB_METHOD("AddRaster", "_IMAGE;", Blk_AddRaster, "(FileName)s(InsPt)f[3](Scalefactor)f(RotationAngle)f"), \
     GB_METHOD("AddRay", "_RAY;", Blk_AddRay, "(Point1)f[3](Point2)f[3]"),  \
-    /*GB_METHOD("AddRevolvedSolid", "_ACSH_REVOLVE_CLASS;", Blk_AddRevolvedSolid, "(Profile)o(axis_pt)f[3](axis_dir)f[3](angle)f"), \
+    /*                                                                  \
+    GB_METHOD("AddRevolvedSolid", "_3DSOLID;", Blk_AddRevolvedSolid, "(Profile)o(axis_pt)f[3](axis_dir)f[3](angle)f"), \
     GB_METHOD("AddSection", "_SECTIONOBJECT;", Blk_AddSection, "(FromPoint)f[3](ToPoint)f[3](PlaneVector)f[3]"), */ \
     GB_METHOD("AddShape", "_SHAPE;", Blk_AddShape, "(Name)s(ins_pt)f[3](scale_factor)f(oblique_angle)f"), \
     GB_METHOD("AddSolid", "_SOLID;", Blk_AddSolid, "(pt1)f[3](pt2)f[3](pt3)f[3](pt4)f[3]"), \
+    GB_METHOD("AddSphere", "_3DSOLID;", Blk_AddSphere, "(Center)f[3](Radius)f"), \
+    GB_METHOD("AddSpline", "_SPLINE;", Blk_AddSpline, "(fit_pts)f[](beg_tan_vec)f[3](end_tan_vec)f[3]"), \
+    /*GB_METHOD("AddTable", "_TABLE;", Blk_AddTable, "(ins_pt)f[3](num_rows)i(num_cols)i(row_height)f(col_width)f"),*/ \
+    GB_METHOD("AddText", "_TEXT;", Blk_AddText, "(text)s(ins_pt)f[3](height)f"), \
+    GB_METHOD("AddTolerance", "_TOLERANCE;", Blk_AddTolerance, "(text)s(ins_pt)f[3](x_direction)f[3]"), \
+    GB_METHOD("AddTorus", "_3DSOLID;", Blk_AddTorus, "(Center)f[3](TorusRadius)f(TubeRadius)f"), \
+    GB_METHOD("AddTrace", "_TRACE;", Blk_AddTrace, "(points3d)f[]"), \
+    GB_METHOD("AddWedge", "_3DSOLID;", Blk_AddWedge, "(Center)f[3](Length)f(Width)f(Height)f"), \
+    GB_METHOD("AddXLine", "_XLINE;", Blk_AddXLine, "(Point1)f[3](Point2)f[3]"),  \
     \
     GB_METHOD("_get", "_CDwgObject;", Entities_get, "(Index)i"),           \
     /*GB_METHOD("_put", NULL, Entities_put, "(Object)v(Index)i"),*/        \
@@ -657,4 +893,3 @@ GB_DESC token##_Desc[] =                                        \
   }
 ENTITY_COLLECTION (ModelSpace);
 ENTITY_COLLECTION (PaperSpace);
-//ENTITY_COLLECTION (Blocks);

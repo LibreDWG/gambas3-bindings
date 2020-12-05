@@ -33,7 +33,6 @@
     Dwg_Object_BLOCK_HEADER *blkhdr;               \
     /* list of entities: */                        \
     unsigned iter;                                 \
-    Dwg_Object *curr;                              \
   } C##token
 
 ENTITY_COLLECTION (ModelSpace);

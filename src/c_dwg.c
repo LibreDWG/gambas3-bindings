@@ -804,3 +804,14 @@ GB_DESC token##_Desc[] =                                 \
 #include "objects.inc"
 #undef DWG_OBJECT
 #undef DWG_ENTITY
+
+/* TODO Add object specific methods:
+SORTENTSTABLE.Block
+HATCH.AppendInnerLoop
+HATCH.AppendOuterLoop
+3DSOLID.Boolean
+REGION.Boolean
+GROUP.AppendItems
+POLYLINE_{3D,2D,MESH}.AppendVertex
+
+*/
