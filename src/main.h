@@ -77,4 +77,4 @@ extern GB_CLASS CLASS_AssocPersSubentManagers;
 
 #endif
 
-#endif /* _MAIN_H */
+#endif /* __MAIN_H */

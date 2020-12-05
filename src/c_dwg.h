@@ -81,28 +81,14 @@ DICT_COLLECTION (AssocPersSubentManagers, ASSOCPERSSUBENTMANAGER);
 #undef DWG_ENTITY 
 
 #undef CLASSDESC
-#else
+
+#else /* _C_DWG_C */
 
 #define THIS ((CDwgDocument *)_object)
 #define THIS_DWG THIS->dwg
 #define THIS_DXF ((CDxfDocument *)_object)
 
-#endif
-
-#if LIBREDWG_VERSION_0_76
-
-#define CDWG_list_get(_list, _i) ((_list)->at(_i))
-#define CDWG_list_count(_list) ((_list)->size())
-
-#else
-
-#define CDWG_list_get(_list, _i) ((OutlineItem *)(_list)->get(_i))
-#define CDWG_list_count(_list) ((_list)->getLength())
-
-#endif
-
-#define CDWG_index_get(_i) CDWG_list_get(THIS->index, _i)
-#define CDWG_index_count() CDWG_list_count(THIS->index)
+#endif /* _C_DWG_C */
 
 typedef struct {
   GB_BASE ob;
@@ -128,18 +114,6 @@ typedef union {
   BITCODE_H h;
   BITCODE_3BD pt;
 } CDwg_Variant;
-
-#define ENTITY_COLLECTION(token)                   \
-  typedef struct {                                 \
-    GB_BASE ob;                                    \
-    Dwg_Data *dwg;                                 \
-    /* list */                                     \
-    Dwg_Object *curr;                              \
-  } C##token
-
-ENTITY_COLLECTION (ModelSpace);
-ENTITY_COLLECTION (PaperSpace);
-ENTITY_COLLECTION (Blocks);
 
 // get, put. next
 #define TABLE_COLLECTION(token, object)            \
@@ -223,7 +197,7 @@ typedef CDICTIONARY CDwgObject;
 #define strNEc(s1, s2) strcmp ((s1), s2 "")
 
 #define memBEGIN(s1, s2, len) (strlen (s1) >= len && !memcmp (s1, s2, len))
-#define memBEGINc(s1, s2)                                                     \
+#define memBEGINc(s1, s2)                       \
   (strlen (s1) >= sizeof (s2 "") - 1 && !memcmp (s1, s2, sizeof (s2 "") - 1))
 
 #endif

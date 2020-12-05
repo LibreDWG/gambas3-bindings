@@ -300,16 +300,28 @@ GB_DESC DwgDocument_Desc[] =
   GB_CONSTANT("R_AFTER","i", R_AFTER),   // also invalid
 
   GB_METHOD("_new",  "o", DwgDocument_new, "[(File)]"),
-  GB_METHOD("Add",   "o", DwgDocument_Add, "[(Version)]"),
   GB_METHOD("_free", 0,   DwgDocument_free, 0),
+  GB_METHOD("Add",   "o", DwgDocument_Add, "[(Version)]"),
   GB_METHOD("Open",  "o", DwgDocument_Open,"File"),
-#ifndef USE_WRITE
   GB_METHOD("Save",  0,   DwgDocument_Save,"(File)"),
-#endif
   /*
   GB_METHOD("SaveAs",0, DwgDocument_SaveAs,"[File, (Version)]"),
   GB_METHOD("Export",0, DwgDocument_Export,"[File, Extension ]"),
   GB_METHOD("Close", 0, DwgDocument_Close, 0), //ignore?
+
+  GB_METHOD("AddDictionary", 0, Dwg_AddDictionary, "(Name)s(Key)s(Handle)o"),
+  GB_METHOD("AddDictionaryWDflt", 0, Dwg_AddDictionaryWDflt, "(Name)s(Key)s(Handle)o"),
+  GB_METHOD("AddPlaceholder", 0, Dwg_AddPlaceholder, 0),
+
+  GB_METHOD("AddLayer",       0, Dwg_AddLayer, "(Name)s"),
+  GB_METHOD("AddLinetype",    0, Dwg_AddLinetype, "(Name)s"),
+  GB_METHOD("AddRegisteredApplication", 0, Dwg_AddRegapp, "(Name)s"),
+  GB_METHOD("AddTextStyle","o", Dwg_AddTextStyle, "(Name)s"),
+  GB_METHOD("AddDimStyle","o", Dwg_AddDimStyle, "(Name)s"),
+  GB_METHOD("AddUCS","o", Dwg_AddUCS, "(Name)s(Origin)a(XAxis)a(YAxis)a"),
+  GB_METHOD("AddViewport","o", Dwg_AddViewport, "(Name)s"),
+  GB_METHOD("AddView","o", Dwg_AddView, "(Name)s"),
+  GB_METHOD("AddGroup","o", Dwg_AddView, "(Name)s"),
   */
 
   GB_PROPERTY_READ("ModelSpace","o", ModelSpace_prop),
@@ -455,53 +467,6 @@ GB_DESC Header_Desc[] =
    GB_END_DECLARE
 };
 
-// List of ModelSpace, PaperSpace or Blocks entities.
-// Returns dwg_ent_generic Object
-BEGIN_METHOD(Entities_get, GB_INTEGER index;)
-  
-END_METHOD
-
-// Returns dwg_ent_generic Object
-BEGIN_METHOD_VOID(Entities_next)
-  
-    if (*curr < 0 || *curr >= count)
-      GB.StopEnum();
-    else
-      {
-        //THIS_MESSAGE->lastKey = gst_structure_nth_field_name(data, *index);
-        //const GValue *value = gst_structure_get_value(data, THIS_MESSAGE->lastKey);
-        return_value(value);
-            
-        GB.ReturnConvVariant();
-        (*iter)++;
-      }
-END_METHOD
-  
-BEGIN_PROPERTY(Entities_Count)
-
-  const Dwg_Data *dwg = THIS_DWG;
-  // FIXME number of entities in this collection
-  GB.ReturnInt(dwg->num_objects);
-
-END_PROPERTY
-
-// This is backed by block_header iterators,
-// but the key is not a string, but indices or handles. Returns dwg_ent_generic.
-#define ENTITY_COLLECTION(token)                                \
-GB_DESC token##_Desc[] =                                        \
-  {                                                             \
-    GB_DECLARE(#token, sizeof(C##token)), GB_NOT_CREATABLE(),   \
-    /* List of entities */                                      \
-    GB_PROPERTY_READ("Count", "i", Entities_Count),             \
-    GB_METHOD("Add",  "o", Entities_Add, NULL),                 \
-    GB_METHOD("_get", "o", Entities_get, "(Index)i"),           \
-    /*GB_METHOD("_put", NULL, Entities_put, "(Object)v(Index)i"),*/ \
-    GB_METHOD("_next", "o",Entities_next, NULL),                \
-    GB_END_DECLARE                                              \
-  }
-ENTITY_COLLECTION (ModelSpace);
-ENTITY_COLLECTION (PaperSpace);
-//ENTITY_COLLECTION (Blocks);
 
 BEGIN_PROPERTY(Objects_Count)
 
@@ -542,7 +507,7 @@ BEGIN_PROPERTY(Table_Count)
   GB.ReturnInt(_ctrl->num_entries);
 END_PROPERTY
 
-// Add to TABLE
+// Add Tablerecord to Tables
 BEGIN_METHOD(Table_Add, GB_STRING name;)
   char *name = STRING(name);
   Dwg_Type type = ctrl->fixedtype;
@@ -551,7 +516,7 @@ BEGIN_METHOD(Table_Add, GB_STRING name;)
   if (type == DWG_TYPE_##token)                          \
     {                                                    \
       Dwg_Object_##token *_obj = dwg_add_##token (THIS_DWG, name); \
-      GB.ReturnObject (_obj);                            \
+      GB.ReturnObject (obj_generic_to_gb (_obj));        \
     }
   ADD_TABLE (BLOCK_HEADER) else
   ADD_TABLE (LAYER) else
@@ -568,8 +533,8 @@ BEGIN_METHOD(Table_Add, GB_STRING name;)
     GB.ReturnObject (obj_generic_to_gb (_obj));
   }
   else {
-      GB.Error(GB_ERR_TYPE);
-      return;
+    GB.Error(GB_ERR_TYPE);
+    return;
   }
 END_METHOD
 
@@ -599,9 +564,9 @@ END_METHOD
 // This is backed by an TABLE_CONTROL array, looked up by name or index.
 // Returns Dwg_Object_OBJECT*
 #define TABLE_ARRAY(token, obj)                               \
-GB_DESC token##_Desc[] =                                      \
+GB_DESC token##s_Desc[] =                                     \
   {                                                           \
-    GB_DECLARE(#token, sizeof(C##token)), GB_NOT_CREATABLE(), \
+    GB_DECLARE(#token"s", sizeof(C##token##s)), GB_NOT_CREATABLE(), \
     /* Array of table records */                              \
     GB_PROPERTY_READ("Count", "i", Table_Count),              \
     GB_METHOD("Add", "v", Table_Add, "(Name)s"),              \
@@ -611,15 +576,15 @@ GB_DESC token##_Desc[] =                                      \
     /*GB_METHOD("_next", "v",Table_next, NULL),*/             \
     GB_END_DECLARE                                            \
   }
-TABLE_ARRAY (Blocks, BLOCK_HEADER);
-TABLE_ARRAY (DimStyles, DIMSTYLE);
-TABLE_ARRAY (Layers, LAYER);
-TABLE_ARRAY (Linetypes, LTYPE);
-TABLE_ARRAY (RegisteredApplications, APPID);
-TABLE_ARRAY (TextStyles, STYLE);
-TABLE_ARRAY (UCSs, UCS);
-TABLE_ARRAY (Viewports, VPORT);
-TABLE_ARRAY (Views, VIEW);
+TABLE_ARRAY (Block, BLOCK_HEADER);
+TABLE_ARRAY (DimStyle, DIMSTYLE);
+TABLE_ARRAY (Layer, LAYER);
+TABLE_ARRAY (Linetype, LTYPE);
+TABLE_ARRAY (RegisteredApplication, APPID);
+TABLE_ARRAY (TextStyle, STYLE);
+TABLE_ARRAY (UCS, UCS);
+TABLE_ARRAY (Viewport, VPORT);
+TABLE_ARRAY (View, VIEW);
 
 // Lookup by name in the dictionary array. Returns a dwg_obj_generic or handle
 #define DICT_COLLECTION(token, nodkey, obj)                   \
@@ -659,25 +624,38 @@ DICT_COLLECTION2 (AssocPersSubentManagers, ASSOCPERSSUBENTMANAGER);
 
 /* get/set Object or Entity fields by fieldname */
 
-BEGIN_PROPERTY(Object_Count)
-
+BEGIN_PROPERTY(Object_fieldcount)
   const dwg_ent_generic *obj = VARG(_object);
   int n = 0;
-  // TODO dynapi: all object specific plus all common fields
+  // TODO dynapi: all object-specific fiels plus all common fields
   GB.ReturnInt(n);
-
 END_PROPERTY
 
-BEGIN_METHOD(Object_get, GB_STRING name;)
+// Objects are added to the DWG, Entities to a BLOCK_HEADER
+BEGIN_METHOD(Object_Add, GB_OBJECT dwg; GB_STRING name;)
 
-  const char *key = STRING(name);
+  const char *klass = STRING(name);
+  // FIXME
+
+END_METHOD
+
+BEGIN_METHOD(Entity_Add, GB_OBJECT blkhdr; GB_STRING name;)
+
+  const char *klass = STRING(name);
+  // FIXME
+
+END_METHOD
+
+BEGIN_METHOD(Object_get, GB_STRING field;)
+
+  const char *key = STRING(field);
   const dwg_ent_generic *obj = VARG(_object);
   const Dwg_Data *dwg = THIS_DWG;
   CDwg_Variant value;
   Dwg_DYNAPI_field f;
   GB_VARIANT retval;
 
-  if (!dwg_dynapi_entity_value (obj, _key, &value, &f))
+  if (!dwg_dynapi_entity_value (obj, key, &value, &f))
     {
       GB.Error(GB_ERR_BOUND);
       return;
@@ -687,9 +665,9 @@ BEGIN_METHOD(Object_get, GB_STRING name;)
 
 END_METHOD
 
-BEGIN_METHOD(Object_set, GB_STRING name; GB_VARIANT value;)
+BEGIN_METHOD(Object_set, GB_STRING field; GB_VARIANT value;)
 
-  const char *key = STRING(name);
+  const char *key = STRING(field);
   const dwg_ent_generic *obj = VARG(_object);
   GB_VALUE *value = (GB_VALUE *)ARG(value);
   const Dwg_Data *dwg = THIS_DWG;
@@ -709,14 +687,24 @@ END_METHOD
 GB_DESC token##_Desc[] =                                 \
   {                                                      \
     GB_DECLARE(#token, sizeof(C##token)),                \
-    /* get/set Object or Entity fields by fieldname */   \
-    GB_PROPERTY_READ("Count", "i", Object_count),        \
-    GB_METHOD("_get", "v", Object_get, "(Key)s"),        \
-    GB_METHOD("_put", NULL,Object_set, "(Value)v(Key)s"),\
+    GB_PROPERTY_READ("Count", "i", Object_fieldcount),   \
+    /* get/set Object fields by fieldname */             \
+    GB_METHOD("_get", "v", Object_get, "(Field)s"),      \
+    GB_METHOD("_put", NULL,Object_set, "(Value)v(Field)s"),\
     GB_METHOD("_next", "s",Object_nextfield, NULL),      \
     GB_END_DECLARE                                       \
   };
-#define DWG_ENTITY(token) DWG_OBJECT(token)
+#define DWG_ENTITY(token) \
+GB_DESC token##_Desc[] =                                 \
+  {                                                      \
+    GB_DECLARE(#token, sizeof(C##token)),                \
+    GB_PROPERTY_READ("Count", "i", Object_fieldcount),   \
+    /* get/set Entity fields by fieldname */             \
+    GB_METHOD("_get", "v", Object_get, "(Field)s"),      \
+    GB_METHOD("_put", NULL,Object_set, "(Value)v(Field)s"),\
+    GB_METHOD("_next", "s",Object_nextfield, NULL),      \
+    GB_END_DECLARE                                       \
+  };
 #include "objects.inc"
 #undef DWG_OBJECT
 #undef DWG_ENTITY
