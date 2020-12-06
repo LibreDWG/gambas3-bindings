@@ -724,6 +724,19 @@ BEGIN_METHOD(PLine_GetBulge, GB_INTEGER index)
   GB.ReturnFloat (0.0);
 END_METHOD
 
+#undef THIS
+#define THIS ((CXRECORD*)_object)
+#define THIS_ENT ((CPOINT*)_object)
+
+BEGIN_METHOD(_3DFace_GetInvisibleEdge, GB_INTEGER index)
+  const int index = (int)VARG(index);
+  Dwg_Entity__3DFACE *_obj = ((C_3DFACE*)_object)->_obj;
+  BITCODE_BS invis_flag = _obj->invis_flags;
+  if (index < 0 || index > 3)
+    GB.Error(GB_ERR_BOUND);
+  GB.ReturnBoolean (invis_flag & index);
+END_METHOD
+
 /* get/set Object or Entity fields by fieldname */
 
 BEGIN_PROPERTY(Object_fieldcount)
@@ -906,33 +919,35 @@ GB_DESC token##_Desc[] =                                 \
     GB_END_DECLARE                                       \
   }
 
+/* Object Specific methods: */
+
+// INSERT, MINSERT
+#define DWG_ENTITY_INSERT                                               \
+  GB_METHOD("ConvertToAnonymousBlock", 0, Insert_ConvertToAnonymousBlock, NULL), \
+  GB_METHOD("GetAttributes", "o", Insert_GetAttributes, NULL),          \
+  GB_METHOD("ConvertToStaticBlock", 0, DynBlock_ConvertToStaticBlock, "(name)s"), \
+  GB_METHOD("GetDynamicBlockProperties", "o", DynBlock_GetDynamicBlockProperties, NULL)
+
+// POLYLINE_2D, LWPOLYLINE
+#define DWG_ENTITY_PLINE                                           \
+  GB_METHOD("AppendVertex", 0, PLine_AppendVertex, "(point)f[3]"), \
+  GB_METHOD("GetBulge", "f", PLine_GetBulge, "(index)i")
+
+#define DWG_ENTITY__3DFACE                                               \
+  GB_METHOD("GetInvisibleEdge", "b", _3DFace_GetInvisibleEdge, "(index)i")
+
 #define DWG_ENTITY(token)                                \
   COMMON_ENTITY_PRE(token,token),                        \
   COMMON_ENTITY_POST;
 #define DWG_ENTITY2(obj,token)                           \
   COMMON_ENTITY_PRE(obj,token),                          \
   COMMON_ENTITY_POST;
-
-// if (strEQc (#token, "INSERT") || strEQc (#token, "MINSERT")) {
-#define DWG_ENTITY_INSERT(obj,token)                     \
+#define DWG_ENTITY2_EXTRA(obj,token,extra)               \
   COMMON_ENTITY_PRE(obj,token),                          \
-  /* Specific methods: */                                \
-  GB_METHOD("ConvertToAnonymousBlock", 0, Insert_ConvertToAnonymousBlock, NULL), \
-  GB_METHOD("GetAttributes", "o", Insert_GetAttributes, NULL),        \
-  GB_METHOD("ConvertToStaticBlock", 0, DynBlock_ConvertToStaticBlock, "(name)s"), \
-  GB_METHOD("GetDynamicBlockProperties", "o", DynBlock_GetDynamicBlockProperties, NULL), \
+  DWG_ENTITY_##extra,                                    \
   COMMON_ENTITY_POST;
 
-// if (memBEGINc (#token, "POLYLINE") || strEQc (#token, "LWPOLYLINE")) {
-#define DWG_ENTITY_PLINE(obj,token)                      \
-  COMMON_ENTITY_PRE(obj,token),                          \
-  /* Specific methods: */                                \
-  GB_METHOD("AppendVertex", 0, PLine_AppendVertex, "(point)f[3]"), \
-  GB_METHOD("GetBulge", "f", PLine_GetBulge, "(index)i"), \
-  COMMON_ENTITY_POST;
-
-#include "common-names.inc"
-//#include "objects.inc"
+#include "names.inc"
 #undef DWG_OBJECT
 #undef DWG_ENTITY
 

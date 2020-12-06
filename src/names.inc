@@ -12,12 +12,13 @@
 /*****************************************************************************/
 
 /*
- * common-names.inc: associate libredwg names with public VBA names.
- * This is for all objects with no specific methods.
+ * names.inc: associate libredwg names with public VBA names.
+ * Taken from objects.inc
+ * This is for all objects with no specific methods, and objects with extra methods.
  * written by Reini Urban
  */
 
-DWG_ENTITY2 (_3DFACE, _3DFace)
+DWG_ENTITY2_EXTRA (_3DFACE, _3DFace, _3DFACE)
 DWG_ENTITY2 (_3DSOLID, _3DSolid)
 DWG_ENTITY (ALIGNMENTPARAMETERENTITY)
 DWG_ENTITY2 (ARC, Arc)
@@ -55,16 +56,16 @@ DWG_ENTITY2 (GEOPOSITIONMARKER, GeoPositionMarker)
 DWG_ENTITY2 (HATCH, Hatch)
 DWG_ENTITY2 (HELIX, Helix)
 DWG_ENTITY2 (IMAGE, RasterImage)
-DWG_ENTITY2 (INSERT, InsertBlock) // or BlockRef?
+DWG_ENTITY2_EXTRA (INSERT, InsertBlock, INSERT) // or BlockRef?
 DWG_ENTITY2 (LARGE_RADIAL_DIMENSION, DimRadialLarge)
 DWG_ENTITY2 (LEADER, Leader)
 DWG_ENTITY (LIGHT)
 DWG_ENTITY2 (LINE, Line)
 DWG_ENTITY (LINEARPARAMETERENTITY)
 DWG_ENTITY2 (LOFTEDSURFACE, LoftedSurface)
-DWG_ENTITY2 (LWPOLYLINE, LightWeightPolyline)
+DWG_ENTITY2_EXTRA (LWPOLYLINE, LightWeightPolyline, PLINE)
 DWG_ENTITY2 (MESH, Mesh)
-DWG_ENTITY2 (MINSERT, MInsertBlock)
+DWG_ENTITY2_EXTRA (MINSERT, MInsertBlock, INSERT)
 DWG_ENTITY2 (MLINE, MLine)
 DWG_ENTITY (MPOLYGON)
 DWG_ENTITY2 (MTEXT, MText)
@@ -78,7 +79,7 @@ DWG_ENTITY2 (POINT, Point)
 DWG_ENTITY (POINTCLOUD)
 DWG_ENTITY (POINTCLOUDEX)
 DWG_ENTITY (POINTPARAMETERENTITY)
-DWG_ENTITY2 (POLYLINE_2D, Polyline)
+DWG_ENTITY2_EXTRA (POLYLINE_2D, Polyline, PLINE)
 DWG_ENTITY2 (POLYLINE_3D, _3DPoly)
 DWG_ENTITY2 (POLYLINE_MESH, _3DMesh)
 DWG_ENTITY2 (POLYLINE_PFACE, PolyfaceMesh)
