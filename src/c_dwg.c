@@ -158,11 +158,13 @@ CDwgObject* handle_to_gb (Dwg_Data *dwg, Dwg_Object_Ref *hdl)
 
 GB_DATE* TIMERLL_to_Date (BITCODE_TIMERLL date)
 {
+  GB.Error("Not yet implemented");
   GB.ReturnVariant (NULL);
 }
 
 char* TU_to_utf8 (BITCODE_TU wstr)
 {
+  GB.Error("Not yet implemented");
   GB.ReturnString (NULL);
 }
 
@@ -325,6 +327,7 @@ GB_DESC DwgDocument_Desc[] =
   GB_METHOD("AddViewport","o", Dwg_AddViewport, "(Name)s"),
   GB_METHOD("AddView","o", Dwg_AddView, "(Name)s"),
   GB_METHOD("AddGroup","o", Dwg_AddView, "(Name)s"),
+  EndUndoMark
   */
 
   GB_PROPERTY_READ("ModelSpace","o", ModelSpace_prop),
@@ -419,6 +422,8 @@ GB_DESC SummaryInfo_Desc[] =
    GB_PROPERTY_READ("TimeInDwg","d",SummaryInfo_tdindwg),
    GB_PROPERTY_READ("CreationDate","d",SummaryInfo_tdcreate),
    GB_PROPERTY_READ("ModificationDate","d",SummaryInfo_tdupdate),
+   // GetCustomByIndex
+   // GetCustomByKey
    GB_END_DECLARE
 };
 
@@ -616,6 +621,8 @@ BEGIN_METHOD(Dict_get, GB_STRING key;)
 END_METHOD
 
 BEGIN_METHOD(Dict_put, GB_OBJECT obj; GB_STRING key)
+  // FIXME
+  GB.Error("Not yet implemented");
   GB.ReturnVariant (NULL);
 END_METHOD
 
@@ -667,6 +674,56 @@ DICT_COLLECTION2 (AssocPersSubentManagers, ASSOCPERSSUBENTMANAGER);
 #define THIS ((CXRECORD*)_object)
 #define THIS_ENT ((CPOINT*)_object)
 
+
+/* Object-specific methods */
+
+BEGIN_METHOD_VOID(Insert_ConvertToAnonymousBlock)
+  // TODO
+  GB.Error("Not yet implemented");
+  GB.ReturnVariant (NULL);
+END_METHOD
+
+BEGIN_METHOD_VOID(Insert_GetAttributes)
+  //TODO
+  GB.Error("Not yet implemented");
+  GB.ReturnVariant (NULL);
+END_METHOD
+
+// TODO for all dynamic blocks (has AcDbEvalExpr?)
+BEGIN_METHOD(DynBlock_ConvertToStaticBlock, GB_STRING name)
+  const char *name = STRING(name);
+  GB.Error("Not yet implemented");
+  GB.ReturnVariant (NULL);
+END_METHOD
+
+BEGIN_METHOD_VOID(DynBlock_GetDynamicBlockProperties)
+  //TODO
+  GB.Error("Not yet implemented");
+  GB.ReturnVariant (NULL);
+END_METHOD
+
+// GB_METHOD("AppendVertex", 0, PLine_AppendVertex, "(point)f[3]"),
+BEGIN_METHOD(PLine_AppendVertex, GB_OBJECT point)
+  dwg_point_3d point;
+  SET_PT1 (point);
+  GB.Error("Not yet implemented");
+  GB.ReturnVariant (NULL);
+END_METHOD
+
+// GB_METHOD("GetBulge", "f", PLine_GetBulge, "(index)i"),
+BEGIN_METHOD(PLine_GetBulge, GB_INTEGER index)
+  const int index = (int)VARG(index);
+  Dwg_Object *obj = THIS->obj;
+  if (obj->fixedtype != DWG_TYPE_LWPOLYLINE &&
+      obj->fixedtype != DWG_TYPE_POLYLINE_2D) {
+    GB.Error(GB_ERR_TYPE);
+    GB.ReturnVariant (NULL);
+    return;
+  }
+  GB.Error("Not yet implemented");
+  GB.ReturnFloat (0.0);
+END_METHOD
+
 /* get/set Object or Entity fields by fieldname */
 
 BEGIN_PROPERTY(Object_fieldcount)
@@ -690,21 +747,35 @@ END_PROPERTY
 BEGIN_METHOD(Object_Add, GB_OBJECT dwg; GB_STRING name;)
   const char *klass = STRING(name);
   // FIXME
+  GB.Error("Not yet implemented");
   GB.ReturnVariant (NULL);
 END_METHOD
 */
 
 BEGIN_METHOD_VOID(Object_Copy)
-
-  // FIXME
+  // FIXME clone the object/entity
+  GB.Error("Not yet implemented");
   GB.ReturnVariant (NULL);
+END_METHOD
 
+BEGIN_METHOD_VOID(Object_Delete)
+  // FIXME
+  GB.Error("Not yet implemented");
+  GB.ReturnVariant (NULL);
+END_METHOD
+
+// GetExtensionDictionary", "_DICTIONARY;", Object_GetExtensionDictionary, NULL)
+BEGIN_METHOD_VOID(Object_GetExtensionDictionary)
+  // FIXME
+  GB.Error("Not yet implemented");
+  GB.ReturnVariant (NULL);
 END_METHOD
 
 /*
 BEGIN_METHOD(Entity_Add, GB_OBJECT blkhdr; GB_STRING name)
   const char *klass = STRING(name);
   // FIXME
+  GB.Error("Not yet implemented");
   GB.ReturnVariant (NULL);
 END_METHOD
 */
@@ -795,43 +866,151 @@ GB_DESC token##_Desc[] =                                 \
     GB_DECLARE(#token, sizeof(C##token)),                \
     GB_PROPERTY_READ("Count", "i", Object_fieldcount),   \
     GB_METHOD("Copy", "o", Object_Copy, NULL),           \
+    GB_METHOD("Delete", 0, Object_Delete, NULL),         \
+    GB_METHOD("GetExtensionDictionary", "_DICTIONARY;", Object_GetExtensionDictionary, NULL), \
     /* get/set Object fields by fieldname */             \
     GB_METHOD("_get", "v", Object_get, "(Field)s"),      \
     GB_METHOD("_put", NULL,Object_set, "(Value)v(Field)s"),\
     GB_METHOD("_next", "s",Object_nextfield, NULL),      \
     GB_END_DECLARE                                       \
   };
-#define DWG_ENTITY(token)                                \
-GB_DESC token##_Desc[] =                                 \
+#define DWG_OBJECT2(obj,token)                           \
+GB_DESC obj##_Desc[] =                                   \
   {                                                      \
-    GB_DECLARE(#token, sizeof(C##token)),                \
+    GB_DECLARE(#token, sizeof(C##obj)),                  \
     GB_PROPERTY_READ("Count", "i", Object_fieldcount),   \
     GB_METHOD("Copy", "o", Object_Copy, NULL),           \
-    /* get/set Entity fields by fieldname */             \
+    GB_METHOD("Delete", 0, Object_Delete, NULL),         \
+    GB_METHOD("GetExtensionDictionary", "_DICTIONARY;", Object_GetExtensionDictionary, NULL), \
+    /* get/set Object fields by fieldname */             \
     GB_METHOD("_get", "v", Object_get, "(Field)s"),      \
     GB_METHOD("_put", NULL,Object_set, "(Value)v(Field)s"),\
     GB_METHOD("_next", "s",Object_nextfield, NULL),      \
     GB_END_DECLARE                                       \
   };
-#include "objects.inc"
+
+#define COMMON_ENTITY_PRE(obj,token)                     \
+GB_DESC token##_Desc[] =                                 \
+  {                                                      \
+    GB_DECLARE(#token, sizeof(C##obj)),                  \
+    GB_PROPERTY_READ("Count", "i", Object_fieldcount),   \
+    GB_METHOD("Copy", "o", Object_Copy, NULL),           \
+    GB_METHOD("Delete", 0, Object_Delete, NULL),         \
+    GB_METHOD("GetExtensionDictionary", "_DICTIONARY;", Object_GetExtensionDictionary, NULL)
+
+#define COMMON_ENTITY_POST                               \
+    /* get/set Entity fields by fieldname */             \
+    GB_METHOD("_get", "v", Object_get, "(Field)s"),      \
+    GB_METHOD("_put", NULL,Object_set, "(Value)v(Field)s"),\
+    GB_METHOD("_next", "s",Object_nextfield, NULL),      \
+    GB_END_DECLARE                                       \
+  }
+
+#define DWG_ENTITY(token)                                \
+  COMMON_ENTITY_PRE(token,token),                        \
+  COMMON_ENTITY_POST;
+#define DWG_ENTITY2(obj,token)                           \
+  COMMON_ENTITY_PRE(obj,token),                          \
+  COMMON_ENTITY_POST;
+
+// if (strEQc (#token, "INSERT") || strEQc (#token, "MINSERT")) {
+#define DWG_ENTITY_INSERT(obj,token)                     \
+  COMMON_ENTITY_PRE(obj,token),                          \
+  /* Specific methods: */                                \
+  GB_METHOD("ConvertToAnonymousBlock", 0, Insert_ConvertToAnonymousBlock, NULL), \
+  GB_METHOD("GetAttributes", "o", Insert_GetAttributes, NULL),        \
+  GB_METHOD("ConvertToStaticBlock", 0, DynBlock_ConvertToStaticBlock, "(name)s"), \
+  GB_METHOD("GetDynamicBlockProperties", "o", DynBlock_GetDynamicBlockProperties, NULL), \
+  COMMON_ENTITY_POST;
+
+// if (memBEGINc (#token, "POLYLINE") || strEQc (#token, "LWPOLYLINE")) {
+#define DWG_ENTITY_PLINE(obj,token)                      \
+  COMMON_ENTITY_PRE(obj,token),                          \
+  /* Specific methods: */                                \
+  GB_METHOD("AppendVertex", 0, PLine_AppendVertex, "(point)f[3]"), \
+  GB_METHOD("GetBulge", "f", PLine_GetBulge, "(index)i"), \
+  COMMON_ENTITY_POST;
+
+#include "common-names.inc"
+//#include "objects.inc"
 #undef DWG_OBJECT
 #undef DWG_ENTITY
 
-/* TODO object specific methods (can we add them to the class_Desc?)
+/* TODO object specific methods. Can we add them to the class_Desc,
+   or do we need to split up the objects inc?
 
-SORTENTSTABLE.Block
+3DFACE.GetInvisibleEdge
+3DSOLID.Boolean
+BLOCK.Bind
+BLOCK.Detach
+GROUP.AppendItems
 HATCH.AppendInnerLoop
 HATCH.AppendOuterLoop
-3DSOLID.Boolean
-REGION.Boolean
-GROUP.AppendItems
-POLYLINE_{3D,2D,MESH}.AppendVertex
-BLOCK.Bind
-TABLE.ClearTableStyleOverrides
+HATCH.Evaluate
 IMAGE.ClipBoundary
-UNDERLAY.ClipBoundary
-INSERT.ConvertToAnonymousBlock
-INSERT.ConvertToStaticBlock
+LAYOUT.GetCanonicalMediaNames
+LAYOUT.GetCustomScale
+PLOTSETTINGS.GetCanonicalMediaNames
+Layers.GenerateUsageData
+LEADER.Evaluate
+MULTILEADER.GetBlockAttributeValue
+MULTILEADER.GetBlockAttributeValue32
+LWPOLYLINE.GetBulge
+POLYLINE_2D.GetBulge
+POLYLINE_{3D,2D,MESH}.AppendVertex
+REGION.Boolean
+SECTION.GenerateSectionGeometry
+SORTENTSTABLE.Block
+SORTENTSTABLE.GetFullDrawOrder
+SPLINE.DeleteFitPoint
+SPLINE.ElevateOrder
+SPLINE.GetControlPoint
+SPLINE.GetFitPoint
+STYLE.GetFont
+TABLE.ClearTableStyleOverrides
+TABLE.CreateContent
+TABLE.DeleteCellContent
+TABLE.DeleteColumns
+TABLE.DeleteContent
+TABLE.DeleteRows
+TABLE.EnableMergeAll
+TABLE.FormatValue
+TABLE.GenerateLayout
+TABLE.GetAlignment
+TABLE.GetAlignment2
+TABLE.GetAttachmentPoint
+TABLE.GetAutoScale
+TABLE.GetAutoScale2
+TABLE.GetBackgroundColor
+TABLE.GetBackgroundColorNone
+TABLE.GetBlockAttributeValue
+TABLE.GetBlockAttributeValue2
+TABLE.GetBlockAttributeValue32
+TABLE.GetBlockRotation
+TABLE.GetBlockScale
+TABLE.GetBlockTableRecordId
+TABLE.GetBlockTableRecordId2
+TABLE.GetBlockTableRecordId32
+TABLE.GetBreakHeight
+TABLE.GetCellAlignment
+...
 TABLE_STYLE.CreateCellStyle
+TABLE_STYLE.CreateCellStyleFromStyle
+TABLE_STYLE.DeleteCellStyle
+TABLE_STYLE.EnableMergeAll
+TABLE_STYLE.GetAlignment
+TABLE_STYLE.GetAlignment2
+TABLE_STYLE.GetBackgroundColor
+TABLE_STYLE.GetBackgroundColorNone
+TABLE_STYLE.GetDataType
+TABLE_STYLE.GetDataType2
+TABLE_STYLE.GetFormat
+TABLE_STYLE.GetFormat2
+TEXT.FieldCode
+MTEXT.FieldCode
+UNDERLAY.ClipBoundary
+VIEWPORT.Display
+ViewPorts.DeleteConfiguration
+PLOT.DisplayPlotPreview
 
 */

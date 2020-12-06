@@ -216,4 +216,16 @@ char* TU_to_utf8 (BITCODE_TU wstr);
 #define memBEGINc(s1, s2)                       \
   (strlen (s1) >= sizeof (s2 "") - 1 && !memcmp (s1, s2, sizeof (s2 "") - 1))
 
+#define SET_PT(tgt, arg) \
+  tgt.x = *(double*)GB.Array.Get ((GB_ARRAY)VARG(arg), 0); \
+  tgt.y = *(double*)GB.Array.Get ((GB_ARRAY)VARG(arg), 1); \
+  tgt.z = *(double*)GB.Array.Get ((GB_ARRAY)VARG(arg), 2)
+#define SET_PT1(arg) \
+  arg.x = *(double*)GB.Array.Get ((GB_ARRAY)VARG(arg), 0); \
+  arg.y = *(double*)GB.Array.Get ((GB_ARRAY)VARG(arg), 1); \
+  arg.z = *(double*)GB.Array.Get ((GB_ARRAY)VARG(arg), 2)
+#define SET_PT2D(arg) \
+  arg.x = *(double*)GB.Array.Get ((GB_ARRAY)VARG(arg), 0); \
+  arg.y = *(double*)GB.Array.Get ((GB_ARRAY)VARG(arg), 1)
+
 #endif

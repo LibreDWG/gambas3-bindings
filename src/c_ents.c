@@ -30,8 +30,8 @@
 
 // List of ModelSpace, PaperSpace or Blocks entities.
 // Returns dwg_ent_generic Object
-BEGIN_METHOD(Entities_get, GB_INTEGER index;)
-  
+BEGIN_METHOD(Entities_get, GB_INTEGER index;)  
+  GB.Error("Not yet implemented");
 END_METHOD
 
 // Returns dwg_ent_generic Object
@@ -45,18 +45,6 @@ END_METHOD
 BEGIN_PROPERTY(Entities_Count)
   GB.ReturnInteger (THIS->blkhdr->num_owned);
 END_PROPERTY
-
-#define SET_PT(tgt, arg) \
-  tgt.x = *(double*)GB.Array.Get ((GB_ARRAY)VARG(arg), 0); \
-  tgt.y = *(double*)GB.Array.Get ((GB_ARRAY)VARG(arg), 1); \
-  tgt.z = *(double*)GB.Array.Get ((GB_ARRAY)VARG(arg), 2)
-#define SET_PT1(arg) \
-  arg.x = *(double*)GB.Array.Get ((GB_ARRAY)VARG(arg), 0); \
-  arg.y = *(double*)GB.Array.Get ((GB_ARRAY)VARG(arg), 1); \
-  arg.z = *(double*)GB.Array.Get ((GB_ARRAY)VARG(arg), 2)
-#define SET_PT2D(arg) \
-  arg.x = *(double*)GB.Array.Get ((GB_ARRAY)VARG(arg), 0); \
-  arg.y = *(double*)GB.Array.Get ((GB_ARRAY)VARG(arg), 1)
 
 BEGIN_METHOD(Blk_Add3DFace, GB_OBJECT pt1; GB_OBJECT pt2; GB_OBJECT pt3; GB_OBJECT pt4)
   Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
@@ -170,7 +158,6 @@ BEGIN_METHOD(Blk_AddDimAngular, GB_OBJECT center_pt; GB_OBJECT xline1end_pt;
   GB.ReturnObject (obj_generic_to_gb (_obj));
 END_METHOD
 
-/*
 BEGIN_METHOD(Blk_AddDimArc, GB_OBJECT center; GB_OBJECT xline1_pt; GB_OBJECT xline2_pt;
                             GB_OBJECT arc_pt)
   Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
@@ -180,10 +167,14 @@ BEGIN_METHOD(Blk_AddDimArc, GB_OBJECT center; GB_OBJECT xline1_pt; GB_OBJECT xli
   SET_PT1 (xline1_pt);
   SET_PT1 (xline2_pt);
   SET_PT1 (arc_pt);
+#ifdef HAVE_DWG_ADD_ARC_DIMENSION
   _obj = dwg_add_ARC_DIMENSION (blkhdr, &center, &xline1_pt, &xline2_pt, &arc_pt);
   GB.ReturnObject (obj_generic_to_gb (_obj));
+#else
+  GB.Error("Not yet implemented");
+  GB.ReturnVariant (NULL);
+#endif
 END_METHOD
-*/
 
 BEGIN_METHOD(Blk_AddDimDiametric, GB_OBJECT chord_pt; GB_OBJECT far_chord_pt;
                                   GB_FLOAT leader_len)
@@ -409,14 +400,13 @@ BEGIN_METHOD(Blk_AddMLeader, GB_OBJECT points; GB_INTEGER leaderline_index)
     pts[i].y = *(double*)GB.Array.Get (points, j++);
     pts[i].z = *(double*)GB.Array.Get (points, j++);
   }
-  if (0)
-    ; // _obj = dwg_add_MULTILEADER (blkhdr, num, pts, leaderline_index);
-  else {
-    GB.Error (GB_ERR_TYPE);
-    GB.ReturnVariant (NULL);
-    return;
-  }
+#ifdef HAVE_DWG_ADD_MULTILEADER 
+  _obj = dwg_add_MULTILEADER (blkhdr, num, pts, leaderline_index);
   GB.ReturnObject (obj_generic_to_gb (_obj));
+#else
+  GB.Error("Not yet implemented");
+  GB.ReturnVariant (NULL);
+#endif
 END_METHOD
 
 // (Points3D)f[]
@@ -691,7 +681,7 @@ BEGIN_METHOD(Blk_AddBox, GB_OBJECT origin; GB_FLOAT length; GB_FLOAT width; GB_F
   _obj = dwg_add_BOX (blkhdr, &origin, length, width, height);
   GB.ReturnObject (obj_generic_to_gb (_obj));
 #else
-  GB.Error (GB_ERR_TYPE);
+  GB.Error("Not yet implemented");
   GB.ReturnVariant (NULL);
 #endif
 END_METHOD
@@ -708,7 +698,7 @@ BEGIN_METHOD(Blk_AddCone, GB_OBJECT center; GB_FLOAT base_radius; GB_FLOAT heigh
   _obj = dwg_add_CONE (blkhdr, &center, base_radius, height);
   GB.ReturnObject (obj_generic_to_gb (_obj));
 #else
-  GB.Error (GB_ERR_TYPE);
+  GB.Error("Not yet implemented");
   GB.ReturnVariant (NULL);
 #endif
 END_METHOD
@@ -725,7 +715,7 @@ BEGIN_METHOD(Blk_AddCylinder, GB_OBJECT center; GB_FLOAT radius;
   _obj = dwg_add_CYLINDER (blkhdr, &center, radius, height);
   GB.ReturnObject (obj_generic_to_gb (_obj));
 #else
-  GB.Error (GB_ERR_TYPE);
+  GB.Error("Not yet implemented");
   GB.ReturnVariant (NULL);
 #endif
 END_METHOD
@@ -744,7 +734,7 @@ BEGIN_METHOD(Blk_AddEllipticalCone, GB_OBJECT center; GB_FLOAT major_radius;
   _obj = dwg_add_ELLIPTICAL_CONE (blkhdr, &center, major_radius, minor_radius, height);
   GB.ReturnObject (obj_generic_to_gb (_obj));
 #else
-  GB.Error (GB_ERR_TYPE);
+  GB.Error("Not yet implemented");
   GB.ReturnVariant (NULL);
 #endif
 END_METHOD
@@ -763,7 +753,7 @@ BEGIN_METHOD(Blk_AddEllipticalCylinder, GB_OBJECT center; GB_FLOAT major_radius;
   _obj = dwg_add_ELLIPTICAL_CYLINDER (blkhdr, &center, major_radius, minor_radius, height);
   GB.ReturnObject (obj_generic_to_gb (_obj));
 #else
-  GB.Error (GB_ERR_TYPE);
+  GB.Error("Not yet implemented");
   GB.ReturnVariant (NULL);
 #endif
 END_METHOD
@@ -781,7 +771,7 @@ BEGIN_METHOD(Blk_AddWedge, GB_OBJECT center; GB_FLOAT length; GB_FLOAT width; GB
   _obj = dwg_add_WEDGE (blkhdr, &center, length, width, height);
   GB.ReturnObject (obj_generic_to_gb (_obj));
 #else
-  GB.Error (GB_ERR_TYPE);
+  GB.Error("Not yet implemented");
   GB.ReturnVariant (NULL);
 #endif
 END_METHOD
@@ -798,7 +788,7 @@ BEGIN_METHOD(Blk_AddSphere, GB_OBJECT center; GB_FLOAT radius)
   _obj = dwg_add_SPHERE (blkhdr, &center, radius);
   GB.ReturnObject (obj_generic_to_gb (_obj));
 #else
-  GB.Error (GB_ERR_TYPE);
+  GB.Error("Not yet implemented");
   GB.ReturnVariant (NULL);
 #endif
 END_METHOD
@@ -815,7 +805,7 @@ BEGIN_METHOD(Blk_AddTorus, GB_OBJECT center; GB_FLOAT torus_radius; GB_FLOAT tub
   _obj = dwg_add_TORUS (blkhdr, &center, torus_radius, tube_radius);
   GB.ReturnObject (obj_generic_to_gb (_obj));
 #else
-  GB.Error (GB_ERR_TYPE);
+  GB.Error("Not yet implemented");
   GB.ReturnVariant (NULL);
 #endif
 END_METHOD
@@ -878,7 +868,7 @@ GB_DESC token##_Desc[] =                                        \
     GB_METHOD("AddDim3PointAngular", "_DIMENSION_ANG3PT;", Blk_AddDim3PointAngular, "(AngleVertex)f[3](FirstEndPoint)f[3](SecondEndPoint)f[3](TextPoint)f[3]"), \
     GB_METHOD("AddDimAligned", "_DIMENSION_ALIGNED;", Blk_AddDimAligned, "(FirstEndPoint)f[3](SecondEndPoint)f[3](TextPoint)f[3]"), \
     GB_METHOD("AddDimAngular", "_DIMENSION_ANG2LN;", Blk_AddDimAngular, "(CenterPoint)f[3](FirstEndPoint)f[3](SecondEndPoint)f[3](TextPoint)f[3]"), \
-    /*GB_METHOD("AddDimArc", "_ARC_DIMENSION;", Blk_AddDimArc, "(Center)f[3](FirstEndPoint)f[3](SecondEndPoint)f[3](ArcPoint)f[3]"),*/ \
+    GB_METHOD("AddDimArc", "_ARC_DIMENSION;", Blk_AddDimArc, "(Center)f[3](FirstEndPoint)f[3](SecondEndPoint)f[3](ArcPoint)f[3]"), \
     GB_METHOD("AddDimDiametric", "_DIMENSION_DIAMETER;", Blk_AddDimDiametric, "(FirstEndPoint)f[3](SecondEndPoint)f[3](TextPoint)f[3]"), \
     GB_METHOD("AddDimOrdinate", "_DIMENSION_ORDINATE;", Blk_AddDimOrdinate, "(DefPoint)f[3](LeaderEndPoint)f[3](UseXAxis)b"), \
     GB_METHOD("AddDimRadial", "_DIMENSION_RADIUS;", Blk_AddDimRadial, "(Center)f[3](ChordPoint)f[3](LeaderLength)f"), \
@@ -920,7 +910,8 @@ GB_DESC token##_Desc[] =                                        \
     GB_METHOD("AddTrace", "_TRACE;", Blk_AddTrace, "(points3d)f[]"), \
     GB_METHOD("AddWedge", "_3DSOLID;", Blk_AddWedge, "(Center)f[3](Length)f(Width)f(Height)f"), \
     GB_METHOD("AddXLine", "_XLINE;", Blk_AddXLine, "(Point1)f[3](Point2)f[3]"),  \
-    GB_METHOD("AttachExternalReference", "_INSERT;", Blk_AttachExternalReference, "(path_name)s(name)s(ins_pt)f[3](xscale)f(yscale)f(zscale)f(rotation)f(is_overlay)b"),  \
+    GB_METHOD("AttachExternalReference", "_INSERT;", Blk_AttachExternalReference, \
+              "(path_name)s(name)s(ins_pt)f[3](xscale)f(yscale)f(zscale)f(rotation)f(is_overlay)b"), \
     \
     GB_METHOD("_get", "_CDwgObject;", Entities_get, "(Index)i"),           \
     /*GB_METHOD("_put", NULL, Entities_put, "(Object)v(Index)i"),*/        \
