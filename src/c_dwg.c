@@ -777,7 +777,7 @@ BEGIN_METHOD_VOID(Object_Delete)
   GB.ReturnVariant (NULL);
 END_METHOD
 
-// GetExtensionDictionary", "_DICTIONARY;", Object_GetExtensionDictionary, NULL)
+// GetExtensionDictionary", "_Dictionary;", Object_GetExtensionDictionary, NULL)
 BEGIN_METHOD_VOID(Object_GetExtensionDictionary)
   // FIXME
   GB.Error("Not yet implemented");
@@ -880,7 +880,8 @@ GB_DESC token##_Desc[] =                                 \
     GB_PROPERTY_READ("Count", "i", Object_fieldcount),   \
     GB_METHOD("Copy", "o", Object_Copy, NULL),           \
     GB_METHOD("Delete", 0, Object_Delete, NULL),         \
-    GB_METHOD("GetExtensionDictionary", "_DICTIONARY;", Object_GetExtensionDictionary, NULL), \
+    GB_METHOD("GetExtensionDictionary", "_Dictionary;",  \
+              Object_GetExtensionDictionary, NULL),      \
     /* get/set Object fields by fieldname */             \
     GB_METHOD("_get", "v", Object_get, "(Field)s"),      \
     GB_METHOD("_put", NULL,Object_set, "(Value)v(Field)s"),\
@@ -894,7 +895,8 @@ GB_DESC obj##_Desc[] =                                   \
     GB_PROPERTY_READ("Count", "i", Object_fieldcount),   \
     GB_METHOD("Copy", "o", Object_Copy, NULL),           \
     GB_METHOD("Delete", 0, Object_Delete, NULL),         \
-    GB_METHOD("GetExtensionDictionary", "_DICTIONARY;", Object_GetExtensionDictionary, NULL), \
+    GB_METHOD("GetExtensionDictionary", "_Dictionary;",  \
+              Object_GetExtensionDictionary, NULL),      \
     /* get/set Object fields by fieldname */             \
     GB_METHOD("_get", "v", Object_get, "(Field)s"),      \
     GB_METHOD("_put", NULL,Object_set, "(Value)v(Field)s"),\
@@ -909,7 +911,7 @@ GB_DESC token##_Desc[] =                                 \
     GB_PROPERTY_READ("Count", "i", Object_fieldcount),   \
     GB_METHOD("Copy", "o", Object_Copy, NULL),           \
     GB_METHOD("Delete", 0, Object_Delete, NULL),         \
-    GB_METHOD("GetExtensionDictionary", "_DICTIONARY;", Object_GetExtensionDictionary, NULL)
+    GB_METHOD("GetExtensionDictionary", "_Dictionary;", Object_GetExtensionDictionary, NULL)
 
 #define COMMON_ENTITY_POST                               \
     /* get/set Entity fields by fieldname */             \
@@ -951,10 +953,9 @@ GB_DESC token##_Desc[] =                                 \
 #undef DWG_OBJECT
 #undef DWG_ENTITY
 
-/* TODO object specific methods. Can we add them to the class_Desc,
-   or do we need to split up the objects inc?
+/* Done and missing object specific methods:
 
-3DFACE.GetInvisibleEdge
+/3DFACE.GetInvisibleEdge
 3DSOLID.Boolean
 BLOCK.Bind
 BLOCK.Detach
@@ -970,9 +971,9 @@ Layers.GenerateUsageData
 LEADER.Evaluate
 MULTILEADER.GetBlockAttributeValue
 MULTILEADER.GetBlockAttributeValue32
-LWPOLYLINE.GetBulge
-POLYLINE_2D.GetBulge
-POLYLINE_{3D,2D,MESH}.AppendVertex
+/LWPOLYLINE.GetBulge
+/POLYLINE_2D.GetBulge
+/POLYLINE_{3D,2D,MESH}.AppendVertex
 REGION.Boolean
 SECTION.GenerateSectionGeometry
 SORTENTSTABLE.Block

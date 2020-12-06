@@ -527,8 +527,8 @@ BEGIN_METHOD(Blk_AddPViewport, GB_STRING name; GB_OBJECT center; GB_FLOAT width;
 END_METHOD
 
 // (FileName)s(InsPt)f[3](Scalefactor)f(RotationAngle)f
-BEGIN_METHOD(Blk_AddRaster, GB_STRING file_path; GB_OBJECT ins_pt;
-                            GB_FLOAT scale_factor; GB_FLOAT rotation_angle)
+BEGIN_METHOD(Blk_AddRasterImage, GB_STRING file_path; GB_OBJECT ins_pt;
+                                 GB_FLOAT scale_factor; GB_FLOAT rotation_angle)
   Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
   Dwg_Entity_IMAGE *_obj;
   char *file_path = STRING(file_path);
@@ -855,67 +855,70 @@ GB_DESC token##_Desc[] =                                        \
     /* List of entities */                                      \
     GB_PROPERTY_READ("Count", "i", Entities_Count),             \
     /* Foreach entity type AddType */                           \
-    GB_METHOD("Add3DFace", "_3DFACE;", Blk_Add3DFace, "(Point1)f[3](Point2)f[3](Point3)f[3](Point4)f[3]"), \
-    GB_METHOD("Add3DMesh", "_POLYLINE_MESH;", Blk_Add3DMesh, "(M)i(N)i(PointsMatrix)f[16]"), \
-    GB_METHOD("Add3DPoly", "_POLYLINE_3D;", Blk_Add3DPoly, "(Points)f[]"), \
-    GB_METHOD("AddArc", "_ARC;", Blk_AddArc, "(Center)f[3](Radius)f(StartAngle)f(EndAngle)f"), \
+    GB_METHOD("Add3DFace", "__3DFace;", Blk_Add3DFace, "(Point1)f[3](Point2)f[3](Point3)f[3](Point4)f[3]"), \
+    GB_METHOD("Add3DMesh", "__3DMesh;", Blk_Add3DMesh, "(M)i(N)i(PointsMatrix)f[16]"), \
+    GB_METHOD("Add3DPoly", "__3DPoly;", Blk_Add3DPoly, "(Points)f[]"), \
+    GB_METHOD("AddArc", "_Arc;", Blk_AddArc, "(Center)f[3](Radius)f(StartAngle)f(EndAngle)f"), \
     /*GB_METHOD("AddAttribute", "_ATTDEF;", Blk_AddAttribute, "(Height)f(Mode)i(Prompt)s(InsPoint)f[3](Tag)s(Value)s"),*/                                                                  \
-    GB_METHOD("AddBox", "_3DSOLID;", Blk_AddBox, "(Origin)f[3](Length)f(Width)f(Height)f"), \
-    GB_METHOD("AddCircle", "_CIRCLE;", Blk_AddCircle, "(Center)f[3](Radius)f"), \
-    GB_METHOD("AddCone", "_3DSOLID;", Blk_AddCone, "(Center)f[3](BaseRadius)f(Height)f"), \
+    GB_METHOD("AddBox", "__3DSolid;", Blk_AddBox, "(Origin)f[3](Length)f(Width)f(Height)f"), \
+    GB_METHOD("AddCircle", "_Circle;", Blk_AddCircle, "(Center)f[3](Radius)f"), \
+    GB_METHOD("AddCone", "__3DSolid;", Blk_AddCone, "(Center)f[3](BaseRadius)f(Height)f"), \
     /*GB_METHOD("AddCustomObject", "o", Blk_AddCustomObject, "(ClasseName)s"),*/ \
-    GB_METHOD("AddCylinder", "_3DSOLID;", Blk_AddCylinder, "(Center)f[3](Radius)f(Height)f"), \
-    GB_METHOD("AddDim3PointAngular", "_DIMENSION_ANG3PT;", Blk_AddDim3PointAngular, "(AngleVertex)f[3](FirstEndPoint)f[3](SecondEndPoint)f[3](TextPoint)f[3]"), \
-    GB_METHOD("AddDimAligned", "_DIMENSION_ALIGNED;", Blk_AddDimAligned, "(FirstEndPoint)f[3](SecondEndPoint)f[3](TextPoint)f[3]"), \
-    GB_METHOD("AddDimAngular", "_DIMENSION_ANG2LN;", Blk_AddDimAngular, "(CenterPoint)f[3](FirstEndPoint)f[3](SecondEndPoint)f[3](TextPoint)f[3]"), \
-    GB_METHOD("AddDimArc", "_ARC_DIMENSION;", Blk_AddDimArc, "(Center)f[3](FirstEndPoint)f[3](SecondEndPoint)f[3](ArcPoint)f[3]"), \
-    GB_METHOD("AddDimDiametric", "_DIMENSION_DIAMETER;", Blk_AddDimDiametric, "(FirstEndPoint)f[3](SecondEndPoint)f[3](TextPoint)f[3]"), \
-    GB_METHOD("AddDimOrdinate", "_DIMENSION_ORDINATE;", Blk_AddDimOrdinate, "(DefPoint)f[3](LeaderEndPoint)f[3](UseXAxis)b"), \
-    GB_METHOD("AddDimRadial", "_DIMENSION_RADIUS;", Blk_AddDimRadial, "(Center)f[3](ChordPoint)f[3](LeaderLength)f"), \
-    GB_METHOD("AddDimRadialLarge", "_DIMENSION_LARGE_RADIAL_DIMENSION;", Blk_AddDimRadialLarge, "(Center)f[3](ChordPoint)f[3](OverrideCenter)f[3](JogPoint)f[3](JogAngle)f"), \
-    GB_METHOD("AddDimRotated", "_DIMENSION_LINEAR;", Blk_AddDimRotated, "(XLine1Point)f[3](XLine2Point)f[3](DefPoint)f[3](RotationAngle)f"), \
-    GB_METHOD("AddEllipse", "_ELLIPSE;", Blk_AddEllipse, "(Center)f[3](MajorAxis)f(RadiusRatio)f"), \
-    GB_METHOD("AddEllipticalCone", "_3DSOLID;", Blk_AddEllipticalCone, "(Center)f[3](MajorRadius)f(MinorRadius)f(Height)f"), \
-    GB_METHOD("AddEllipticalCylinder", "_3DSOLID;", Blk_AddEllipticalCylinder, "(Center)f[3](MajorRadius)f(MinorRadius)f(Height)f"), \
+    GB_METHOD("AddCylinder", "_3DSolid;", Blk_AddCylinder, "(Center)f[3](Radius)f(Height)f"), \
+    GB_METHOD("AddDim3PointAngular", "_Dim3PointAngular;", Blk_AddDim3PointAngular, "(AngleVertex)f[3](FirstEndPoint)f[3](SecondEndPoint)f[3](TextPoint)f[3]"), \
+    GB_METHOD("AddDimAligned", "_DimAligned;", Blk_AddDimAligned, "(FirstEndPoint)f[3](SecondEndPoint)f[3](TextPoint)f[3]"), \
+    GB_METHOD("AddDimAngular", "_DimAngular;", Blk_AddDimAngular, "(CenterPoint)f[3](FirstEndPoint)f[3](SecondEndPoint)f[3](TextPoint)f[3]"), \
+    GB_METHOD("AddDimArc", "_DimArc;", Blk_AddDimArc, "(Center)f[3](FirstEndPoint)f[3](SecondEndPoint)f[3](ArcPoint)f[3]"), \
+    GB_METHOD("AddDimDiametric", "_DimDiametric;", Blk_AddDimDiametric, "(FirstEndPoint)f[3](SecondEndPoint)f[3](TextPoint)f[3]"), \
+    GB_METHOD("AddDimOrdinate", "_DimOrdinate;", Blk_AddDimOrdinate, "(DefPoint)f[3](LeaderEndPoint)f[3](UseXAxis)b"), \
+    GB_METHOD("AddDimRadial", "_DimRadial;", Blk_AddDimRadial, "(Center)f[3](ChordPoint)f[3](LeaderLength)f"), \
+    GB_METHOD("AddDimRadialLarge", "_DimRadialLarge;", Blk_AddDimRadialLarge, "(Center)f[3](ChordPoint)f[3](OverrideCenter)f[3](JogPoint)f[3](JogAngle)f"), \
+    GB_METHOD("AddDimRotated", "_DimRotated;", Blk_AddDimRotated, "(XLine1Point)f[3](XLine2Point)f[3](DefPoint)f[3](RotationAngle)f"), \
+    GB_METHOD("AddEllipse", "_Ellipse;", Blk_AddEllipse, "(Center)f[3](MajorAxis)f(RadiusRatio)f"), \
+    GB_METHOD("AddEllipticalCone", "_3DSolid;", Blk_AddEllipticalCone, "(Center)f[3](MajorRadius)f(MinorRadius)f(Height)f"), \
+    GB_METHOD("AddEllipticalCylinder", "_3DSolid;", Blk_AddEllipticalCylinder, "(Center)f[3](MajorRadius)f(MinorRadius)f(Height)f"), \
     /*                                                                  \
-    GB_METHOD("AddExtrudedSolid", "_3DSOLID;", Blk_AddExtrudedSolid, "(Profile)o(Height)f(TaperAngle)f"), \
-    GB_METHOD("AddExtrudedSolidAlongPath", "_3DSOLID;", Blk_AddExtrudedSolidAlongPath, "(Profile)o(PathObj)o"), \
+    GB_METHOD("AddExtrudedSolid", "_3DSolid;", Blk_AddExtrudedSolid, "(Profile)o(Height)f(TaperAngle)f"), \
+    GB_METHOD("AddExtrudedSolidAlongPath", "_3DSolid;", Blk_AddExtrudedSolidAlongPath, "(Profile)o(PathObj)o"), \
     */                                                                     \
-    GB_METHOD("AddHatch", "_HATCH;", Blk_AddHatch, "(PatternType)i(PatternName)s(Associativity)b(PathObjects)o[]"), \
-    GB_METHOD("AddLeader", "_LEADER;", Blk_AddLeader, "(Points)f[](Annotation)o(Type)i"), \
-    GB_METHOD("AddLightWeightPolyline", "_LWPOLYLINE;", Blk_AddLightWeightPolyline, "(Points2D)f[]"), \
-    GB_METHOD("AddLine", "_LINE;", Blk_AddLine, "(StartPoint)f[3](EndPoint)f[3]"), \
-    GB_METHOD("AddMInsertBlock", "_MINSERT;", Blk_AddMInsertBlock, "(InsPoint)f[3](Name)s(XScale)f(YScale)f(ZScale)f(Rotation)f(NumRows)i(NumColumns)i(RowSpacing)f(ColumnsSpacing)f"), \
-    GB_METHOD("AddInsertBlock", "_INSERT;", Blk_AddInsertBlock, "(InsPoint)f[3](Name)s(XScale)f(YScale)f(ZScale)f(Rotation)f"), \
-    /* GB_METHOD("AddMLeader", "_MULTILEADER;", Blk_AddMLeader, "(Points)f[](LeaderLineIndex)i"), */ \
-    GB_METHOD("AddMLine", "_MLINE;", Blk_AddMLine, "(points3d)f[]"), \
-    GB_METHOD("AddMText", "_MTEXT;", Blk_AddMText, "(InsPoint)f[3](Width)f(Text)s"), \
-    GB_METHOD("AddPoint", "_POINT;", Blk_AddPoint, "(Point)f[3]"), \
-    GB_METHOD("AddPolyfaceMesh", "_POLYLINE_PFACE;", Blk_AddPolyfaceMesh, "(Points)f[](Faces)i[]"), \
-    GB_METHOD("AddPolyline", "_POLYLINE_2D;", Blk_AddPolyline, "(Points3D)f[]"), \
-    GB_METHOD("AddPViewport", "_VIEWPORT;", Blk_AddPViewport, "(Center)f[3](Width)f(Height)f"), \
-    GB_METHOD("AddRaster", "_IMAGE;", Blk_AddRaster, "(FileName)s(InsPt)f[3](Scalefactor)f(RotationAngle)f"), \
-    GB_METHOD("AddRay", "_RAY;", Blk_AddRay, "(Point1)f[3](Point2)f[3]"),  \
-    /*                                                                  \
-    GB_METHOD("AddRevolvedSolid", "_3DSOLID;", Blk_AddRevolvedSolid, "(Profile)o(axis_pt)f[3](axis_dir)f[3](angle)f"), \
-    GB_METHOD("AddSection", "_SECTIONOBJECT;", Blk_AddSection, "(FromPoint)f[3](ToPoint)f[3](PlaneVector)f[3]"), */ \
-    GB_METHOD("AddShape", "_SHAPE;", Blk_AddShape, "(Name)s(ins_pt)f[3](scale_factor)f(oblique_angle)f"), \
-    GB_METHOD("AddSolid", "_SOLID;", Blk_AddSolid, "(pt1)f[3](pt2)f[3](pt3)f[3](pt4)f[3]"), \
-    GB_METHOD("AddSphere", "_3DSOLID;", Blk_AddSphere, "(Center)f[3](Radius)f"), \
-    GB_METHOD("AddSpline", "_SPLINE;", Blk_AddSpline, "(fit_pts)f[](beg_tan_vec)f[3](end_tan_vec)f[3]"), \
-    /*GB_METHOD("AddTable", "_TABLE;", Blk_AddTable, "(ins_pt)f[3](num_rows)i(num_cols)i(row_height)f(col_width)f"),*/ \
-    GB_METHOD("AddText", "_TEXT;", Blk_AddText, "(text)s(ins_pt)f[3](height)f"), \
-    GB_METHOD("AddTolerance", "_TOLERANCE;", Blk_AddTolerance, "(text)s(ins_pt)f[3](x_direction)f[3]"), \
-    GB_METHOD("AddTorus", "_3DSOLID;", Blk_AddTorus, "(Center)f[3](TorusRadius)f(TubeRadius)f"), \
-    GB_METHOD("AddTrace", "_TRACE;", Blk_AddTrace, "(points3d)f[]"), \
-    GB_METHOD("AddWedge", "_3DSOLID;", Blk_AddWedge, "(Center)f[3](Length)f(Width)f(Height)f"), \
-    GB_METHOD("AddXLine", "_XLINE;", Blk_AddXLine, "(Point1)f[3](Point2)f[3]"),  \
+    GB_METHOD("AddHatch", "_Hatch;", Blk_AddHatch, "(PatternType)i(PatternName)s(Associativity)b(PathObjects)o[]"), \
+    GB_METHOD("AddLeader", "_Leader;", Blk_AddLeader, "(Points)f[](Annotation)o(Type)i"), \
+    GB_METHOD("AddLightWeightPolyline", "_LightWeightPolyline;", Blk_AddLightWeightPolyline, \
+              "(Points2D)f[]"),                                         \
+    GB_METHOD("AddLine", "_Line;", Blk_AddLine, "(StartPoint)f[3](EndPoint)f[3]"), \
+    GB_METHOD("AddMInsertBlock", "_MInsertBlock;", Blk_AddMInsertBlock, "(InsPoint)f[3](Name)s(XScale)f(YScale)f(ZScale)f(Rotation)f(NumRows)i(NumColumns)i(RowSpacing)f(ColumnsSpacing)f"), \
+    GB_METHOD("AddInsertBlock", "_InsertBlock;", Blk_AddInsertBlock, "(InsPoint)f[3](Name)s(XScale)f(YScale)f(ZScale)f(Rotation)f"), \
+    /* GB_METHOD("AddMLeader", "_MLeader;", Blk_AddMLeader, "(Points)f[](LeaderLineIndex)i"), */ \
+    GB_METHOD("AddMLine", "_MLine;", Blk_AddMLine, "(points3d)f[]"), \
+    GB_METHOD("AddMText", "_MText;", Blk_AddMText, "(InsPoint)f[3](Width)f(Text)s"), \
+    GB_METHOD("AddPoint", "_Point;", Blk_AddPoint, "(Point)f[3]"), \
+    GB_METHOD("AddPolyfaceMesh", "_PolyfaceMesh;", Blk_AddPolyfaceMesh, "(Points)f[](Faces)i[]"), \
+    GB_METHOD("AddPolyline", "_Polyline;", Blk_AddPolyline, "(Points3D)f[]"), \
+    GB_METHOD("AddPViewport", "_PViewport;", Blk_AddPViewport, "(Center)f[3](Width)f(Height)f"), \
+    GB_METHOD("AddRasterImage", "_RasterImage;", Blk_AddRasterImage, \
+              "(FileName)s(InsPt)f[3](Scalefactor)f(RotationAngle)f"),  \
+    GB_METHOD("AddRay", "_Ray;", Blk_AddRay, "(Point1)f[3](Point2)f[3]"),  \
+    /*                                                               \
+    GB_METHOD("AddRevolvedSolid", "_3DSolid;", Blk_AddRevolvedSolid, \
+              "(Profile)o(axis_pt)f[3](axis_dir)f[3](angle)f"),      \
+    GB_METHOD("AddSection", "_Section;", Blk_AddSection, "(FromPoint)f[3](ToPoint)f[3](PlaneVector)f[3]"), */ \
+    GB_METHOD("AddShape", "_Shape;", Blk_AddShape, "(Name)s(ins_pt)f[3](scale_factor)f(oblique_angle)f"), \
+    GB_METHOD("AddSolid", "_Solid;", Blk_AddSolid, "(pt1)f[3](pt2)f[3](pt3)f[3](pt4)f[3]"), \
+    GB_METHOD("AddSphere", "_3DSolid;", Blk_AddSphere, "(Center)f[3](Radius)f"), \
+    GB_METHOD("AddSpline", "_Spline;", Blk_AddSpline, "(fit_pts)f[](beg_tan_vec)f[3](end_tan_vec)f[3]"), \
+    /*GB_METHOD("AddTable", "_Table;", Blk_AddTable, "(ins_pt)f[3](num_rows)i(num_cols)i(row_height)f(col_width)f"),*/ \
+    GB_METHOD("AddText", "_Text;", Blk_AddText, "(text)s(ins_pt)f[3](height)f"), \
+    GB_METHOD("AddTolerance", "_Tolerance;", Blk_AddTolerance, "(text)s(ins_pt)f[3](x_direction)f[3]"), \
+    GB_METHOD("AddTorus", "_3DSolid;", Blk_AddTorus, "(Center)f[3](TorusRadius)f(TubeRadius)f"), \
+    GB_METHOD("AddTrace", "_Trace;", Blk_AddTrace, "(points3d)f[]"), \
+    GB_METHOD("AddWedge", "_3DSolid;", Blk_AddWedge, "(Center)f[3](Length)f(Width)f(Height)f"), \
+    GB_METHOD("AddXLine", "_XLine;", Blk_AddXLine, "(Point1)f[3](Point2)f[3]"),  \
     GB_METHOD("AttachExternalReference", "_INSERT;", Blk_AttachExternalReference, \
               "(path_name)s(name)s(ins_pt)f[3](xscale)f(yscale)f(zscale)f(rotation)f(is_overlay)b"), \
     \
-    GB_METHOD("_get", "_CDwgObject;", Entities_get, "(Index)i"),           \
+    GB_METHOD("_get", "_CDwgEntity;", Entities_get, "(Index)i"),           \
     /*GB_METHOD("_put", NULL, Entities_put, "(Object)v(Index)i"),*/        \
-    GB_METHOD("_next", "_CDwgObject;",Entities_next, NULL),                \
+    GB_METHOD("_next", "_CDwgEntity;",Entities_next, NULL),                \
     GB_END_DECLARE                                                         \
   }
 ENTITY_COLLECTION (ModelSpace);

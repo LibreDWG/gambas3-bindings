@@ -193,7 +193,7 @@ DICT_COLLECTION2 (AssocPersSubentManagers, ASSOCPERSSUBENTMANAGER);
 #undef DWG_ENTITY
 
 typedef CDICTIONARY CDwgObject;
-
+typedef CPOINT CDwgEntity;
 
 void dynapi_to_gb_value (const Dwg_Data *dwg,
                          const Dwg_DYNAPI_field *f,
