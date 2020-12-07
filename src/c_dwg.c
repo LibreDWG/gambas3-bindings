@@ -42,7 +42,7 @@ void dynapi_to_gb_value (const Dwg_Data *dwg,
 {
   if (!f) {
     fprintf (stderr, "Unknown field");
-    GB.Error(GB_ERR_BOUND);
+    GB.Error (GB_ERR_BOUND);
     GB.ReturnVariant (NULL);
     return;
   }
@@ -107,7 +107,7 @@ void dynapi_to_gb_value (const Dwg_Data *dwg,
     break;
   }
   fprintf (stderr, "Unhandled type %s", f->type);
-  GB.Error(GB_ERR_TYPE);
+  GB.Error (GB_ERR_TYPE);
   GB.ReturnVariant (NULL);
   return;
 }
@@ -117,7 +117,7 @@ bool gb_to_dynapi_value (const Dwg_Data *dwg,
                          const GB_VALUE *input,
                          CDwg_Variant *output)
 {
-  GB.Error(GB_ERR_TYPE);
+  GB.Error (GB_ERR_TYPE);
   return false;
 }
 
@@ -158,51 +158,51 @@ CDwgObject* handle_to_gb (Dwg_Data *dwg, Dwg_Object_Ref *hdl)
 
 GB_DATE* TIMERLL_to_Date (BITCODE_TIMERLL date)
 {
-  GB.Error("Not yet implemented");
+  GB.Error ("Not yet implemented");
   GB.ReturnVariant (NULL);
 }
 
 char* TU_to_utf8 (BITCODE_TU wstr)
 {
-  GB.Error("Not yet implemented");
+  GB.Error ("Not yet implemented");
   GB.ReturnString (NULL);
 }
 
-BEGIN_METHOD(DwgDocument_new, GB_STRING file;) /* optional */
-  char *file = STRING(file);
+BEGIN_METHOD (DwgDocument_new, GB_STRING file;) /* optional */
+  char *file = STRING (file);
   CDwgDocument *cdwg = GB.New(GB.FindClass("DwgDocument"), NULL, NULL);
   dwg_read_file (file, cdwg->dwg);
   GB.ReturnObject (cdwg);
 END_METHOD
 
-BEGIN_METHOD(DwgDocument_Open, GB_STRING file;)
-  char *file = STRING(file);
+BEGIN_METHOD (DwgDocument_Open, GB_STRING file;)
+  char *file = STRING (file);
   CDwgDocument *cdwg = GB.New(GB.FindClass("DwgDocument"), NULL, NULL);
   dwg_read_file (file, cdwg->dwg); // TODO error handling
   // TODO: create all the properties and collections at init or on the fly?
   GB.ReturnObject (cdwg);
 END_METHOD
 
-BEGIN_METHOD(DwgDocument_Add, GB_STRING version;) /* optional: is_imperial */
-  char *version = STRING(version);
+BEGIN_METHOD (DwgDocument_Add, GB_STRING version;) /* optional: is_imperial */
+  char *version = STRING (version);
   Dwg_Version_Type ver = dwg_version_as (version);
   GB_CLASS klass = GB.FindClass("DwgDocument");
   CDwgDocument *cdwg = GB.New(klass, NULL, NULL);
   if (ver == R_INVALID || ver == R_AFTER) {
     // Invalid version argument
-    GB.Error(GB_ERR_TYPE);
+    GB.Error (GB_ERR_TYPE);
     return;
   }
   cdwg->dwg = dwg_add_Document (ver, false, 0);
   GB.ReturnObject (cdwg);
 END_METHOD
 
-BEGIN_METHOD(DwgDocument_Save, GB_STRING file;)
-  char *file = STRING(file);
+BEGIN_METHOD (DwgDocument_Save, GB_STRING file;)
+  char *file = STRING (file);
   dwg_write_file (file, THIS_DWG); // TODO error handling
 END_METHOD
 
-BEGIN_METHOD_VOID(DwgDocument_free)
+BEGIN_METHOD_VOID (DwgDocument_free)
   dwg_free (THIS_DWG);
 END_METHOD
 
@@ -430,7 +430,7 @@ GB_DESC SummaryInfo_Desc[] =
 
 #define DWG (((CDwg *)_object)->dwg)
 
-BEGIN_METHOD(Header_get, GB_STRING name;)
+BEGIN_METHOD (Header_get, GB_STRING name;)
 
   char *key = GB.ToZeroString(ARG(name));
   const Dwg_Data *dwg = THIS_DWG;
@@ -440,7 +440,7 @@ BEGIN_METHOD(Header_get, GB_STRING name;)
 
   if (!dwg_dynapi_header_value (dwg, key, &value, &f))
     {
-      GB.Error(GB_ERR_BOUND);
+      GB.Error (GB_ERR_BOUND);
       return;
     }
   dynapi_to_gb_value (dwg, &f, &value);
@@ -448,7 +448,7 @@ BEGIN_METHOD(Header_get, GB_STRING name;)
 
 END_METHOD
 
-BEGIN_METHOD(Header_put, GB_VARIANT value; GB_STRING name;)
+BEGIN_METHOD (Header_put, GB_VARIANT value; GB_STRING name;)
 
   char *key = GB.ToZeroString(ARG(name));
   GB_VALUE *value = (GB_VALUE *)ARG(value);
@@ -456,10 +456,10 @@ BEGIN_METHOD(Header_put, GB_VARIANT value; GB_STRING name;)
   CDwg_Variant out;
 
   if (!gb_to_dynapi_value (dwg, value, &out))
-    GB.Error(GB_ERR_TYPE);
+    GB.Error (GB_ERR_TYPE);
   else
     if (!dwg_dynapi_header_set_value (dwg, key, &out, true))
-      GB.Error(GB_ERR_BOUND);
+      GB.Error (GB_ERR_BOUND);
 
 END_METHOD
 
@@ -484,14 +484,14 @@ BEGIN_PROPERTY(Objects_Count)
 
 END_PROPERTY
 
-BEGIN_METHOD(Objects_get, GB_INTEGER index;)
+BEGIN_METHOD (Objects_get, GB_INTEGER index;)
 
   Dwg_Data *dwg = THIS->dwg;
   unsigned index = (unsigned)VARG(index);
   Dwg_Object *obj;
   if (index >= dwg->num_objects) 
     {
-      GB.Error(GB_ERR_BOUND);
+      GB.Error (GB_ERR_BOUND);
       return;
     }
   obj = &dwg->object[index];
@@ -521,8 +521,8 @@ BEGIN_PROPERTY(Table_Count)
 END_PROPERTY
 
 // Add Tablerecord to Tables
-BEGIN_METHOD(Table_Add, GB_STRING name;)
-  char *name = STRING(name);
+BEGIN_METHOD (Table_Add, GB_STRING name)
+  char *name = STRING (name);
   Dwg_Object_Type type = THIS->ctrl->fixedtype;
 
 #define ADD_TABLE(token)                                 \
@@ -545,13 +545,13 @@ BEGIN_METHOD(Table_Add, GB_STRING name;)
     GB.ReturnObject (obj_generic_to_gb (_obj));
   }
   else {
-    GB.Error(GB_ERR_TYPE);
+    GB.Error (GB_ERR_TYPE);
     return;
   }
 END_METHOD
 
 // lookup in TABLE_CONTROL
-BEGIN_METHOD(Table_get_by_index, GB_INTEGER index;)
+BEGIN_METHOD (Table_get_by_index, GB_INTEGER index)
   unsigned index = VARG(index);
   if (index >= THIS->_ctrl->num_entries)
     {
@@ -561,8 +561,8 @@ BEGIN_METHOD(Table_get_by_index, GB_INTEGER index;)
   GB.ReturnObject (handle_to_gb (THIS->dwg, THIS->_ctrl->entries[index]));
 END_METHOD
 
-BEGIN_METHOD(Table_get_by_name, GB_STRING name;)
-  char *name = STRING(name);
+BEGIN_METHOD (Table_get_by_name, GB_STRING name)
+  char *name = STRING (name);
   for (unsigned i = 0; i < THIS->_ctrl->num_entries; i++)
     {
       Dwg_Object_Ref *ref = THIS->_ctrl->entries[i];
@@ -608,9 +608,9 @@ BEGIN_PROPERTY(Dict_Count)
   GB.ReturnInteger(THIS->dict->numitems);
 END_PROPERTY
 
-BEGIN_METHOD(Dict_get, GB_STRING key;)
+BEGIN_METHOD (Dict_get, GB_STRING key)
   Dwg_Object_DICTIONARY *dict = THIS->dict;
-  char *key = STRING(key);
+  char *key = STRING (key);
   for (unsigned i = 0; i < dict->numitems; i++)
     {
       if (strEQ (dict->texts[i], key)) {
@@ -621,13 +621,13 @@ BEGIN_METHOD(Dict_get, GB_STRING key;)
   GB.ReturnVariant (NULL);
 END_METHOD
 
-BEGIN_METHOD(Dict_put, GB_OBJECT obj; GB_STRING key)
+BEGIN_METHOD (Dict_put, GB_OBJECT obj; GB_STRING key)
   // FIXME
-  GB.Error("Not yet implemented");
+  GB.Error ("Not yet implemented");
   GB.ReturnVariant (NULL);
 END_METHOD
 
-BEGIN_METHOD_VOID(Dict_next)
+BEGIN_METHOD_VOID (Dict_next)
   Dwg_Object_DICTIONARY *dict = THIS->dict;
   if (THIS->iter >= dict->numitems)
     GB.StopEnum();
@@ -678,50 +678,50 @@ DICT_COLLECTION2 (AssocPersSubentManagers, ASSOCPERSSUBENTMANAGER);
 
 /* Object-specific methods */
 
-BEGIN_METHOD_VOID(Insert_ConvertToAnonymousBlock)
+BEGIN_METHOD_VOID (Insert_ConvertToAnonymousBlock)
   // TODO
-  GB.Error("Not yet implemented");
+  GB.Error ("Not yet implemented");
   GB.ReturnVariant (NULL);
 END_METHOD
 
-BEGIN_METHOD_VOID(Insert_GetAttributes)
+BEGIN_METHOD_VOID (Insert_GetAttributes)
   //TODO
-  GB.Error("Not yet implemented");
+  GB.Error ("Not yet implemented");
   GB.ReturnVariant (NULL);
 END_METHOD
 
 // TODO for all dynamic blocks (has AcDbEvalExpr?)
-BEGIN_METHOD(DynBlock_ConvertToStaticBlock, GB_STRING name)
-  const char *name = STRING(name);
-  GB.Error("Not yet implemented");
+BEGIN_METHOD (DynBlock_ConvertToStaticBlock, GB_STRING name)
+  const char *name = STRING (name);
+  GB.Error ("Not yet implemented");
   GB.ReturnVariant (NULL);
 END_METHOD
 
-BEGIN_METHOD_VOID(DynBlock_GetDynamicBlockProperties)
+BEGIN_METHOD_VOID (DynBlock_GetDynamicBlockProperties)
   //TODO
-  GB.Error("Not yet implemented");
+  GB.Error ("Not yet implemented");
   GB.ReturnVariant (NULL);
 END_METHOD
 
 // GB_METHOD("AppendVertex", 0, PLine_AppendVertex, "(point)f[3]"),
-BEGIN_METHOD(PLine_AppendVertex, GB_OBJECT point)
+BEGIN_METHOD (PLine_AppendVertex, GB_OBJECT point)
   dwg_point_3d point;
   SET_PT1 (point);
-  GB.Error("Not yet implemented");
+  GB.Error ("Not yet implemented");
   GB.ReturnVariant (NULL);
 END_METHOD
 
 // GB_METHOD("GetBulge", "f", PLine_GetBulge, "(index)i"),
-BEGIN_METHOD(PLine_GetBulge, GB_INTEGER index)
+BEGIN_METHOD (PLine_GetBulge, GB_INTEGER index)
   const int index = (int)VARG(index);
   Dwg_Object *obj = THIS->obj;
   if (obj->fixedtype != DWG_TYPE_LWPOLYLINE &&
       obj->fixedtype != DWG_TYPE_POLYLINE_2D) {
-    GB.Error(GB_ERR_TYPE);
+    GB.Error (GB_ERR_TYPE);
     GB.ReturnVariant (NULL);
     return;
   }
-  GB.Error("Not yet implemented");
+  GB.Error ("Not yet implemented");
   GB.ReturnFloat (0.0);
 END_METHOD
 
@@ -729,12 +729,12 @@ END_METHOD
 #define THIS ((CXRECORD*)_object)
 #define THIS_ENT ((CPOINT*)_object)
 
-BEGIN_METHOD(_3DFace_GetInvisibleEdge, GB_INTEGER index)
+BEGIN_METHOD (_3DFace_GetInvisibleEdge, GB_INTEGER index)
   const int index = (int)VARG(index);
   Dwg_Entity__3DFACE *_obj = ((C_3DFACE*)_object)->_obj;
   BITCODE_BS invis_flag = _obj->invis_flags;
   if (index < 0 || index > 3)
-    GB.Error(GB_ERR_BOUND);
+    GB.Error (GB_ERR_BOUND);
   GB.ReturnBoolean (invis_flag & index);
 END_METHOD
 
@@ -758,45 +758,45 @@ END_PROPERTY
 // Objects are added to the DWG, Entities to a BLOCK_HEADER
 // Not here, rather see c_ents.c
 /*
-BEGIN_METHOD(Object_Add, GB_OBJECT dwg; GB_STRING name;)
-  const char *klass = STRING(name);
+BEGIN_METHOD (Object_Add, GB_OBJECT dwg; GB_STRING name;)
+  const char *klass = STRING (name);
   // FIXME
-  GB.Error("Not yet implemented");
+  GB.Error ("Not yet implemented");
   GB.ReturnVariant (NULL);
 END_METHOD
 */
 
-BEGIN_METHOD_VOID(Object_Copy)
+BEGIN_METHOD_VOID (Object_Copy)
   // FIXME clone the object/entity
-  GB.Error("Not yet implemented");
+  GB.Error ("Not yet implemented");
   GB.ReturnVariant (NULL);
 END_METHOD
 
-BEGIN_METHOD_VOID(Object_Delete)
+BEGIN_METHOD_VOID (Object_Delete)
   // FIXME
-  GB.Error("Not yet implemented");
+  GB.Error ("Not yet implemented");
   GB.ReturnVariant (NULL);
 END_METHOD
 
 // GetExtensionDictionary", "_Dictionary;", Object_GetExtensionDictionary, NULL)
-BEGIN_METHOD_VOID(Object_GetExtensionDictionary)
+BEGIN_METHOD_VOID (Object_GetExtensionDictionary)
   // FIXME
-  GB.Error("Not yet implemented");
+  GB.Error ("Not yet implemented");
   GB.ReturnVariant (NULL);
 END_METHOD
 
 /*
-BEGIN_METHOD(Entity_Add, GB_OBJECT blkhdr; GB_STRING name)
-  const char *klass = STRING(name);
+BEGIN_METHOD (Entity_Add, GB_OBJECT blkhdr; GB_STRING name)
+  const char *klass = STRING (name);
   // FIXME
-  GB.Error("Not yet implemented");
+  GB.Error ("Not yet implemented");
   GB.ReturnVariant (NULL);
 END_METHOD
 */
 
-BEGIN_METHOD(Object_get, GB_STRING field)
+BEGIN_METHOD (Object_get, GB_STRING field)
 
-  const char *key = STRING(field);
+  const char *key = STRING (field);
   const dwg_ent_generic *obj = (dwg_ent_generic *)THIS->_obj;
   const char *dxfname = THIS->obj->dxfname;
   const Dwg_Data *dwg = THIS->dwg;
@@ -806,16 +806,16 @@ BEGIN_METHOD(Object_get, GB_STRING field)
 
   if (!dwg_dynapi_entity_value (obj, dxfname, key, &value, &f))
     {
-      GB.Error(GB_ERR_BOUND);
+      GB.Error (GB_ERR_BOUND);
       return;
     }
   dynapi_to_gb_value (dwg, &f, &value);
 
 END_METHOD
 
-BEGIN_METHOD(Object_set, GB_STRING field; GB_VARIANT value)
+BEGIN_METHOD (Object_set, GB_STRING field; GB_VARIANT value)
 
-  const char *key = STRING(field);
+  const char *key = STRING (field);
   const dwg_ent_generic *obj = (dwg_ent_generic *)THIS->_obj;
   const char *dxfname = THIS->obj->dxfname;
   GB_VALUE *value = (GB_VALUE *)ARG(value);
@@ -824,15 +824,15 @@ BEGIN_METHOD(Object_set, GB_STRING field; GB_VARIANT value)
 
   if (!gb_to_dynapi_value (dwg, value, &out))
     {
-      GB.Error(GB_ERR_TYPE);
+      GB.Error (GB_ERR_TYPE);
       return;
     }
   if (!dwg_dynapi_entity_set_value (dwg, dxfname, key, &out, true))
-    GB.Error(GB_ERR_TYPE);
+    GB.Error (GB_ERR_TYPE);
 
 END_METHOD
 
-BEGIN_METHOD_VOID(Object_nextfield)
+BEGIN_METHOD_VOID (Object_nextfield)
 
   const dwg_ent_generic *obj = (dwg_ent_generic *)THIS->_obj;
   const char *name = THIS->obj->name;
@@ -845,7 +845,7 @@ BEGIN_METHOD_VOID(Object_nextfield)
     if (THIS->iter == n) {
       if (!dwg_dynapi_entity_value (obj, name, fields->name, &value, &f))
         {
-          GB.Error(GB_ERR_BOUND);
+          GB.Error (GB_ERR_BOUND);
           return;
         }
       THIS->iter++;
@@ -862,7 +862,7 @@ BEGIN_METHOD_VOID(Object_nextfield)
     if (THIS->iter == n) {
       if (!dwg_dynapi_entity_value (obj, name, fields->name, &value, &f))
         {
-          GB.Error(GB_ERR_BOUND);
+          GB.Error (GB_ERR_BOUND);
           return;
         }
       THIS->iter++;
@@ -876,103 +876,89 @@ END_METHOD
 
 GB_DESC DwgObject_Desc[] =
   {
-    GB_DECLARE("DwgObject", sizeof(CDwgObject)),
-    GB_PROPERTY_READ("Count", "i", Object_fieldcount),
-    GB_METHOD("Copy", "o", Object_Copy, NULL),
-    GB_METHOD("Delete", 0, Object_Delete, NULL),
-    GB_METHOD("GetExtensionDictionary", "_Dictionary;",
-              Object_GetExtensionDictionary, NULL),
+    GB_DECLARE ("DwgObject", sizeof(CDwgObject)), GB_VIRTUAL_CLASS (),
+    GB_PROPERTY_READ ("Count", "i", Object_fieldcount),
+    GB_METHOD ("Copy", "o", Object_Copy, NULL),
+    GB_METHOD ("Delete", 0, Object_Delete, NULL),
+    GB_METHOD ("GetExtensionDictionary", "_Dictionary;",
+               Object_GetExtensionDictionary, NULL),
     /* get/set Object fields by fieldname */
-    GB_METHOD("_get", "v", Object_get, "(Field)s"),
-    GB_METHOD("_put", NULL,Object_set, "(Value)v(Field)s"),
-    GB_METHOD("_next", "s",Object_nextfield, NULL),
+    GB_METHOD ("_get", "v", Object_get, "(Field)s"),
+    GB_METHOD ("_put", NULL,Object_set, "(Value)v(Field)s"),
+    GB_METHOD ("_next", "s",Object_nextfield, NULL),
     GB_END_DECLARE
   };
 
 GB_DESC DwgEntity_Desc[] =
   {
-    GB_DECLARE("DwgEntity", sizeof(CDwgEntity)),
-    GB_INHERITS("DwgObject"),
+    GB_DECLARE ("DwgEntity", sizeof(CDwgEntity)), GB_VIRTUAL_CLASS (),
+    GB_PROPERTY_READ ("Count", "i", Object_fieldcount),
+    GB_METHOD ("Copy", "o", Object_Copy, NULL),
+    GB_METHOD ("Delete", 0, Object_Delete, NULL),
+    GB_METHOD ("GetExtensionDictionary", "_Dictionary;",
+               Object_GetExtensionDictionary, NULL),
+    /* get/set Object fields by fieldname */
+    GB_METHOD ("_get", "v", Object_get, "(Field)s"),
+    GB_METHOD ("_put", NULL,Object_set, "(Value)v(Field)s"),
+    GB_METHOD ("_next", "s",Object_nextfield, NULL),
     GB_END_DECLARE
   };
 
 #define DWG_OBJECT(token)                                \
 GB_DESC token##_Desc[] =                                 \
   {                                                      \
-    GB_DECLARE(#token, sizeof(C##token)),                \
-    GB_INHERITS("DwgObject"),                            \
-    GB_PROPERTY_READ("Count", "i", Object_fieldcount),   \
-    GB_METHOD("Copy", "o", Object_Copy, NULL),           \
-    GB_METHOD("Delete", 0, Object_Delete, NULL),         \
-    GB_METHOD("GetExtensionDictionary", "_Dictionary;",  \
-              Object_GetExtensionDictionary, NULL),      \
-    /* get/set Object fields by fieldname */             \
-    GB_METHOD("_get", "v", Object_get, "(Field)s"),      \
-    GB_METHOD("_put", NULL,Object_set, "(Value)v(Field)s"),\
-    GB_METHOD("_next", "s",Object_nextfield, NULL),      \
+    GB_DECLARE (#token, sizeof(C##token)),               \
+    GB_INHERITS ("DwgObject"),                           \
     GB_END_DECLARE                                       \
   };
 #define DWG_OBJECT2(obj,token)                           \
 GB_DESC obj##_Desc[] =                                   \
   {                                                      \
-    GB_DECLARE(#token, sizeof(C##obj)),                  \
-    GB_INHERITS("DwgObject"),                            \
-    GB_PROPERTY_READ("Count", "i", Object_fieldcount),   \
-    GB_METHOD("Copy", "o", Object_Copy, NULL),           \
-    GB_METHOD("Delete", 0, Object_Delete, NULL),         \
-    GB_METHOD("GetExtensionDictionary", "_Dictionary;",  \
-              Object_GetExtensionDictionary, NULL),      \
-    /* get/set Object fields by fieldname */             \
-    GB_METHOD("_get", "v", Object_get, "(Field)s"),      \
-    GB_METHOD("_put", NULL,Object_set, "(Value)v(Field)s"),\
-    GB_METHOD("_next", "s",Object_nextfield, NULL),      \
+    GB_DECLARE (#token, sizeof(C##obj)),                 \
+    GB_INHERITS ("DwgObject"),                           \
     GB_END_DECLARE                                       \
   };
 
-#define COMMON_ENTITY_PRE(obj,token)                     \
-GB_DESC token##_Desc[] =                                 \
+// FIXME: _3D prefix -> 3D class. strip _
+#define COMMON_ENTITY_PRE(obj,token,gbname)              \
+GB_DESC obj##_Desc[] =                                   \
   {                                                      \
-    GB_DECLARE(#token, sizeof(C##obj)),                  \
-    GB_INHERITS("DwgEntity"),                            \
-    GB_PROPERTY_READ("Count", "i", Object_fieldcount),   \
-    GB_METHOD("Copy", "o", Object_Copy, NULL),           \
-    GB_METHOD("Delete", 0, Object_Delete, NULL),         \
-    GB_METHOD("GetExtensionDictionary", "_Dictionary;", Object_GetExtensionDictionary, NULL)
+    GB_DECLARE (gbname, sizeof(C##obj)),                 \
+    GB_INHERITS ("DwgEntity")
 
 #define COMMON_ENTITY_POST                               \
-    /* get/set Entity fields by fieldname */             \
-    GB_METHOD("_get", "v", Object_get, "(Field)s"),      \
-    GB_METHOD("_put", NULL,Object_set, "(Value)v(Field)s"),\
-    GB_METHOD("_next", "s",Object_nextfield, NULL),      \
     GB_END_DECLARE                                       \
   }
 
 /* Object Specific methods: */
+#define DWG_ENTITY_NONE
 
 // INSERT, MINSERT (BlockRef)
-#define DWG_ENTITY_INSERT                                               \
-  GB_METHOD("ConvertToAnonymousBlock", 0, Insert_ConvertToAnonymousBlock, NULL), \
-  GB_METHOD("GetAttributes", "o", Insert_GetAttributes, NULL),          \
-  GB_METHOD("ConvertToStaticBlock", 0, DynBlock_ConvertToStaticBlock, "(name)s"), \
-  GB_METHOD("GetDynamicBlockProperties", "o", DynBlock_GetDynamicBlockProperties, NULL)
+#define DWG_ENTITY_INSERT                                           \
+  GB_METHOD ("ConvertToAnonymousBlock", 0, Insert_ConvertToAnonymousBlock, NULL), \
+  GB_METHOD ("GetAttributes", "o", Insert_GetAttributes, NULL),     \
+  GB_METHOD ("ConvertToStaticBlock", 0, DynBlock_ConvertToStaticBlock, "(name)s"), \
+  GB_METHOD ("GetDynamicBlockProperties", "o", DynBlock_GetDynamicBlockProperties, NULL),
 
-// POLYLINE_2D, LWPOLYLINE
-#define DWG_ENTITY_PLINE                                           \
-  GB_METHOD("AppendVertex", 0, PLine_AppendVertex, "(point)f[3]"), \
-  GB_METHOD("GetBulge", "f", PLine_GetBulge, "(index)i")
+// POLYLINE_2D, LWPOLYLINE, ...
+#define DWG_ENTITY_PLINE                                            \
+  GB_METHOD ("AppendVertex", 0, PLine_AppendVertex, "(point)f[3]"), \
+  GB_METHOD ("GetBulge", "f", PLine_GetBulge, "(index)i"),
+#define DWG_ENTITY_PMESH                                            \
+  GB_METHOD ("AppendVertex", 0, PLine_AppendVertex, "(point)f[3]"),
 
-#define DWG_ENTITY__3DFACE                                               \
-  GB_METHOD("GetInvisibleEdge", "b", _3DFace_GetInvisibleEdge, "(index)i")
+#define DWG_ENTITY__3DFACE                                          \
+  GB_METHOD ("GetInvisibleEdge", "b", _3DFace_GetInvisibleEdge, "(index)i"),
 
 #define DWG_ENTITY(token)                                \
-  COMMON_ENTITY_PRE(token,token),                        \
+  COMMON_ENTITY_PRE (token, token, #token),              \
   COMMON_ENTITY_POST;
-#define DWG_ENTITY2(obj,token)                           \
-  COMMON_ENTITY_PRE(obj,token),                          \
+#define DWG_ENTITY2(obj, token)                          \
+  COMMON_ENTITY_PRE (obj, token, #token),                \
   COMMON_ENTITY_POST;
-#define DWG_ENTITY2_EXTRA(obj,token,extra)               \
-  COMMON_ENTITY_PRE(obj,token),                          \
-  DWG_ENTITY_##extra,                                    \
+#define DWG_ENTITY4_EXTRA(obj, token, gbname, extra)     \
+  COMMON_ENTITY_PRE (obj, token, gbname),                \
+  DWG_ENTITY_##extra                                     \
   COMMON_ENTITY_POST;
 
 #include "names.inc"
