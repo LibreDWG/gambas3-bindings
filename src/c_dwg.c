@@ -923,7 +923,7 @@ GB_DESC token##_Desc[] =                                 \
 
 /* Object Specific methods: */
 
-// INSERT, MINSERT
+// INSERT, MINSERT (BlockRef)
 #define DWG_ENTITY_INSERT                                               \
   GB_METHOD("ConvertToAnonymousBlock", 0, Insert_ConvertToAnonymousBlock, NULL), \
   GB_METHOD("GetAttributes", "o", Insert_GetAttributes, NULL),          \

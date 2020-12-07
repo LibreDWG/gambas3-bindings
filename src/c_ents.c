@@ -526,6 +526,7 @@ BEGIN_METHOD(Blk_AddPViewport, GB_STRING name; GB_OBJECT center; GB_FLOAT width;
   GB.ReturnObject (obj_generic_to_gb (_obj));
 END_METHOD
 
+// Note: VBA names it just AddRaster.
 // (FileName)s(InsPt)f[3](Scalefactor)f(RotationAngle)f
 BEGIN_METHOD(Blk_AddRasterImage, GB_STRING file_path; GB_OBJECT ins_pt;
                                  GB_FLOAT scale_factor; GB_FLOAT rotation_angle)
@@ -835,7 +836,7 @@ BEGIN_METHOD(Blk_AttachExternalReference, GB_STRING path_name; GB_STRING name;
     _blk->is_xref_resolved = 1;
     _blk->is_xref_dep = 1;
     _blk->is_xref_resolved = 256;
-    _blk->xref_pname = path_name;
+    _blk->xref_pname = strdup (path_name);
     _blk->blkisxref = 1;
     _blk->xrefoverlaid = is_overlay;
     _blk->xref = dwg_add_handleref (THIS->dwg, 5, obj->handle.value, blk);
@@ -887,7 +888,7 @@ GB_DESC token##_Desc[] =                                        \
               "(Points2D)f[]"),                                         \
     GB_METHOD("AddLine", "_Line;", Blk_AddLine, "(StartPoint)f[3](EndPoint)f[3]"), \
     GB_METHOD("AddMInsertBlock", "_MInsertBlock;", Blk_AddMInsertBlock, "(InsPoint)f[3](Name)s(XScale)f(YScale)f(ZScale)f(Rotation)f(NumRows)i(NumColumns)i(RowSpacing)f(ColumnsSpacing)f"), \
-    GB_METHOD("AddInsertBlock", "_InsertBlock;", Blk_AddInsertBlock, "(InsPoint)f[3](Name)s(XScale)f(YScale)f(ZScale)f(Rotation)f"), \
+    GB_METHOD("AddInsertBlock", "_BlockRef;", Blk_AddInsertBlock, "(InsPoint)f[3](Name)s(XScale)f(YScale)f(ZScale)f(Rotation)f"), \
     /* GB_METHOD("AddMLeader", "_MLeader;", Blk_AddMLeader, "(Points)f[](LeaderLineIndex)i"), */ \
     GB_METHOD("AddMLine", "_MLine;", Blk_AddMLine, "(points3d)f[]"), \
     GB_METHOD("AddMText", "_MText;", Blk_AddMText, "(InsPoint)f[3](Width)f(Text)s"), \
