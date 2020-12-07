@@ -30,16 +30,22 @@
 
 // List of ModelSpace, PaperSpace or Blocks entities.
 // Returns dwg_ent_generic Object
-BEGIN_METHOD(Entities_get, GB_INTEGER index;)  
-  GB.Error("Not yet implemented");
+BEGIN_METHOD(Entities_get, GB_INTEGER index;)
+  unsigned index = (unsigned)VARG(index);
+  if (index >= THIS->blkhdr->num_owned) {
+    GB.Error(GB_ERR_BOUND);
+    GB.ReturnVariant (NULL);
+    return;
+  }
+  GB.ReturnObject (handle_to_gb (THIS->dwg, THIS->blkhdr->entities[index]));
 END_METHOD
 
 // Returns dwg_ent_generic Object
 BEGIN_METHOD_VOID(Entities_next)
-    if (THIS->iter >= THIS->blkhdr->num_owned)
-      GB.StopEnum();
-    else
-      GB.ReturnObject (handle_to_gb (THIS->dwg, THIS->blkhdr->entities[THIS->iter++]));
+  if (THIS->iter >= THIS->blkhdr->num_owned)
+    GB.StopEnum();
+  else
+    GB.ReturnObject (handle_to_gb (THIS->dwg, THIS->blkhdr->entities[THIS->iter++]));
 END_METHOD
   
 BEGIN_PROPERTY(Entities_Count)
@@ -66,8 +72,13 @@ BEGIN_METHOD(Blk_Add3DMesh, GB_INTEGER m; GB_INTEGER n; GB_OBJECT matrix)
   const unsigned num = m * n;
   GB_ARRAY matrix = (GB_ARRAY)VARG(matrix);
   dwg_point_3d *verts = calloc (num, sizeof (dwg_point_3d));
-  if (GB.Array.Count(matrix) / 3 != num) {
+  if (!verts) {
     GB.Error(GB_ERR_BOUND);
+    GB.ReturnVariant (NULL);
+    return;
+  }
+  if (GB.Array.Count(matrix) / 3 != num) {
+    GB.Error("Invalid number of 3DPoints &1", "matrix");
     GB.ReturnVariant (NULL);
     return;
   }
@@ -85,7 +96,13 @@ BEGIN_METHOD(Blk_Add3DPoly, GB_OBJECT points)
   Dwg_Entity_POLYLINE_3D *_obj;
   GB_ARRAY *ptsarr = (GB_ARRAY)VARG (points);
   unsigned num_pts = GB.Array.Count (ptsarr) / 3;
-  dwg_point_3d *pts = calloc (num_pts, sizeof (dwg_point_3d));
+  dwg_point_3d *pts;
+  if (GB.Array.Count(ptsarr) % 3) {
+    GB.Error("Not array of 3DPoints &1", "points");
+    GB.ReturnVariant (NULL);
+    return;
+  }
+  pts = calloc (num_pts, sizeof (dwg_point_3d));
   for (unsigned i = 0, j = 0; i < num_pts; i++) {
     pts[i].x = *(double*)GB.Array.Get (ptsarr, j++);
     pts[i].y = *(double*)GB.Array.Get (ptsarr, j++);
@@ -285,7 +302,7 @@ BEGIN_METHOD(Blk_AddLeader, GB_OBJECT points; GB_OBJECT annotation; GB_INTEGER t
   dwg_point_3d *pts;
 
   if (GB.Array.Count(points) % 3) { // needs to be dividable by 3
-    GB.Error(GB_ERR_BOUND);
+    GB.Error("Not array of 3DPoints &1", "points");
     GB.ReturnVariant (NULL);
     return;
   }
@@ -308,7 +325,7 @@ BEGIN_METHOD(Blk_AddLightWeightPolyline, GB_OBJECT points2d)
   dwg_point_2d *pts;
 
   if (GB.Array.Count(points) % 2) { // needs to be dividable by 2
-    GB.Error(GB_ERR_BOUND);
+    GB.Error("Not array of 2DPoints &1", "points2d");
     GB.ReturnVariant (NULL);
     return;
   }
@@ -390,7 +407,7 @@ BEGIN_METHOD(Blk_AddMLeader, GB_OBJECT points; GB_INTEGER leaderline_index)
   dwg_point_3d *pts;
 
   if (GB.Array.Count(points) % 3) { // needs to be dividable by 3
-    GB.Error(GB_ERR_BOUND);
+    GB.Error("Not array of 3DPoints &1", "points");
     GB.ReturnVariant (NULL);
     return;
   }
@@ -418,7 +435,7 @@ BEGIN_METHOD(Blk_AddMLine, GB_OBJECT points3d)
   dwg_point_3d *pts;
 
   if (GB.Array.Count(points) % 3) { // needs to be dividable by 3
-    GB.Error(GB_ERR_BOUND);
+    GB.Error("Not array of 3DPoints &1", "points3d");
     GB.ReturnVariant (NULL);
     return;
   }
@@ -463,7 +480,7 @@ BEGIN_METHOD(Blk_AddPolyfaceMesh, GB_OBJECT verts; GB_OBJECT faces)
   dwg_point_3d *verts = calloc (numverts, sizeof (dwg_point_3d));
   dwg_face *faces = calloc (numfaces, sizeof (dwg_face));
   if (GB.Array.Count(verts) % 3) { // needs to be dividable by 3
-    GB.Error(GB_ERR_BOUND);
+    GB.Error("Not array of 3DPoints &1", "points3d");
     GB.ReturnVariant (NULL);
     return;
   }
@@ -495,8 +512,8 @@ BEGIN_METHOD(Blk_AddPolyline, GB_OBJECT points3d)
   int num = GB.Array.Count(points) / 3;
   dwg_point_2d *pts;
 
-  if (GB.Array.Count(points) % 3) { // needs to be dividable by 2
-    GB.Error(GB_ERR_BOUND);
+  if (GB.Array.Count(points) % 3) { // needs to be dividable by 3, with z ignored
+    GB.Error("Not array of 3DPoints &1", "points3d");
     GB.ReturnVariant (NULL);
     return;
   }
@@ -589,7 +606,7 @@ BEGIN_METHOD(Blk_AddSpline, GB_OBJECT fit_pts; GB_OBJECT beg_tan_vec; GB_OBJECT 
   dwg_point_3d *pts, beg_tan_vec, end_tan_vec;
 
   if (GB.Array.Count(fitpts_arr) % 3) { // needs to be dividable by 3
-    GB.Error(GB_ERR_BOUND);
+    GB.Error("Not array of 3DPoints &1", "fit_pts");
     GB.ReturnVariant (NULL);
     return;
   }
