@@ -124,7 +124,7 @@ bool gb_to_dynapi_value (const Dwg_Data *dwg,
 // returns generic Object
 CDwgObject* obj_to_gb (Dwg_Object *obj)
 {
-  GB_CLASS klass = GB.FindClass(obj->dxfname);
+  GB_CLASS klass = GB.FindClass(obj->dxfname); // ? or its VBA name?
   CDwgObject *gb = (CDICTIONARY *)GB.New(klass, NULL, NULL);
   gb->dwg = obj->parent;
   gb->obj = obj;
@@ -179,6 +179,7 @@ BEGIN_METHOD(DwgDocument_Open, GB_STRING file;)
   char *file = STRING(file);
   CDwgDocument *cdwg = GB.New(GB.FindClass("DwgDocument"), NULL, NULL);
   dwg_read_file (file, cdwg->dwg); // TODO error handling
+  // TODO: create all the properties and collections at init or on the fly?
   GB.ReturnObject (cdwg);
 END_METHOD
 
@@ -351,7 +352,7 @@ GB_DESC DwgDocument_Desc[] =
 // It really should create a DwgDocument, and just provide some methods.
 GB_DESC DxfDocument_Desc[] =
 {
-  GB_DECLARE("DxfDocument", sizeof(CDxfDocument)),
+  GB_DECLARE("DxfDocument", sizeof(CDxfDocument)), GB_INHERITS("DwgDocument"),
   /*
   GB_METHOD("_new",  0, DxfDocument_new, "[(File)]"),
   GB_METHOD("_free", 0, DxfDocument_free, 0),
@@ -873,10 +874,33 @@ BEGIN_METHOD_VOID(Object_nextfield)
 
 END_METHOD
 
+GB_DESC DwgObject_Desc[] =
+  {
+    GB_DECLARE("DwgObject", sizeof(CDwgObject)),
+    GB_PROPERTY_READ("Count", "i", Object_fieldcount),
+    GB_METHOD("Copy", "o", Object_Copy, NULL),
+    GB_METHOD("Delete", 0, Object_Delete, NULL),
+    GB_METHOD("GetExtensionDictionary", "_Dictionary;",
+              Object_GetExtensionDictionary, NULL),
+    /* get/set Object fields by fieldname */
+    GB_METHOD("_get", "v", Object_get, "(Field)s"),
+    GB_METHOD("_put", NULL,Object_set, "(Value)v(Field)s"),
+    GB_METHOD("_next", "s",Object_nextfield, NULL),
+    GB_END_DECLARE
+  };
+
+GB_DESC DwgEntity_Desc[] =
+  {
+    GB_DECLARE("DwgEntity", sizeof(CDwgEntity)),
+    GB_INHERITS("DwgObject"),
+    GB_END_DECLARE
+  };
+
 #define DWG_OBJECT(token)                                \
 GB_DESC token##_Desc[] =                                 \
   {                                                      \
     GB_DECLARE(#token, sizeof(C##token)),                \
+    GB_INHERITS("DwgObject"),                            \
     GB_PROPERTY_READ("Count", "i", Object_fieldcount),   \
     GB_METHOD("Copy", "o", Object_Copy, NULL),           \
     GB_METHOD("Delete", 0, Object_Delete, NULL),         \
@@ -892,6 +916,7 @@ GB_DESC token##_Desc[] =                                 \
 GB_DESC obj##_Desc[] =                                   \
   {                                                      \
     GB_DECLARE(#token, sizeof(C##obj)),                  \
+    GB_INHERITS("DwgObject"),                            \
     GB_PROPERTY_READ("Count", "i", Object_fieldcount),   \
     GB_METHOD("Copy", "o", Object_Copy, NULL),           \
     GB_METHOD("Delete", 0, Object_Delete, NULL),         \
@@ -908,6 +933,7 @@ GB_DESC obj##_Desc[] =                                   \
 GB_DESC token##_Desc[] =                                 \
   {                                                      \
     GB_DECLARE(#token, sizeof(C##obj)),                  \
+    GB_INHERITS("DwgEntity"),                            \
     GB_PROPERTY_READ("Count", "i", Object_fieldcount),   \
     GB_METHOD("Copy", "o", Object_Copy, NULL),           \
     GB_METHOD("Delete", 0, Object_Delete, NULL),         \
