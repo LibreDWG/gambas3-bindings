@@ -125,7 +125,7 @@ bool gb_to_dynapi_value (const Dwg_Data *dwg,
 CDwgObject* obj_to_gb (Dwg_Object *obj)
 {
   GB_CLASS klass = GB.FindClass(obj->dxfname); // ? or its VBA name?
-  CDwgObject *gb = (CDICTIONARY *)GB.New(klass, NULL, NULL);
+  CDwgObject *gb = (CDwgObject *)GB.New(klass, NULL, NULL);
   gb->dwg = obj->parent;
   gb->obj = obj;
   if (obj->supertype == DWG_SUPERTYPE_ENTITY)
@@ -738,6 +738,60 @@ BEGIN_METHOD (_3DFace_GetInvisibleEdge, GB_INTEGER index)
   GB.ReturnBoolean (invis_flag & index);
 END_METHOD
 
+BEGIN_METHOD (Spline_DeleteFitPoint, GB_INTEGER index)
+  const int index = (int)VARG(index);
+  Dwg_Entity_SPLINE *_obj = ((CSPLINE*)_object)->_obj;
+  if (index < 0 || index >= _obj->num_fit_pts)
+    GB.Error (GB_ERR_BOUND);
+  // CHECKME
+  if (index != _obj->num_fit_pts - 1)
+    memmove (&_obj->fit_pts[index], &_obj->fit_pts[index+1], _obj->num_fit_pts - index);
+  _obj->num_fit_pts--;
+END_METHOD
+
+// GB_METHOD ("ElevateOrder", 0, Spline_ElevateOrder, "(order)i"),
+BEGIN_METHOD (Spline_ElevateOrder, GB_INTEGER index)
+  const int index = (int)VARG(index);
+  Dwg_Entity_SPLINE *_obj = ((CSPLINE*)_object)->_obj;
+  if (index < 0 || index >= _obj->num_fit_pts)
+    GB.Error (GB_ERR_BOUND);
+  GB.Error ("Not yet implemented");
+END_METHOD
+
+// GB_METHOD ("GetControlPoint", "o", Spline_GetControlPoint, "(index)i"),
+BEGIN_METHOD (Spline_GetControlPoint, GB_INTEGER index)
+  const int index = (int)VARG(index);
+  Dwg_Entity_SPLINE *_obj = ((CSPLINE*)_object)->_obj;
+  Dwg_SPLINE_control_point pt;
+  GB_ARRAY point;
+  if (index < 0 || index >= _obj->num_ctrl_pts)
+    GB.Error (GB_ERR_BOUND);
+  pt = _obj->ctrl_pts[index];
+  GB.Array.New (POINTER(&point), GB_T_FLOAT, 4);
+  *(double*)GB.Array.Get (point, 0) = pt.x;
+  *(double*)GB.Array.Get (point, 1) = pt.y;
+  *(double*)GB.Array.Get (point, 2) = pt.z;
+  *(double*)GB.Array.Get (point, 3) = pt.w;
+  GB.ReturnObject (point);
+END_METHOD
+
+// GB_METHOD ("GetFitPoint", "o", Spline_GetFitPoint, "(index)i"),
+BEGIN_METHOD (Spline_GetFitPoint, GB_INTEGER index)
+  const int index = (int)VARG(index);
+  Dwg_Entity_SPLINE *_obj = ((CSPLINE*)_object)->_obj;
+  BITCODE_3DPOINT pt;
+  GB_ARRAY point;
+  if (index < 0 || index >= _obj->num_fit_pts)
+    GB.Error (GB_ERR_BOUND);
+  pt = _obj->fit_pts[index];
+  // TODO RETURN_PT macro
+  GB.Array.New (POINTER(&point), GB_T_FLOAT, 3);
+  *(double*)GB.Array.Get (point, 0) = pt.x;
+  *(double*)GB.Array.Get (point, 1) = pt.y;
+  *(double*)GB.Array.Get (point, 2) = pt.z;
+  GB.ReturnObject (point);
+END_METHOD
+
 /* get/set Object or Entity fields by fieldname */
 
 BEGIN_PROPERTY(Object_fieldcount)
@@ -946,9 +1000,13 @@ GB_DESC obj##_Desc[] =                                   \
   GB_METHOD ("GetBulge", "f", PLine_GetBulge, "(index)i"),
 #define DWG_ENTITY_PMESH                                            \
   GB_METHOD ("AppendVertex", 0, PLine_AppendVertex, "(point)f[3]"),
-
 #define DWG_ENTITY__3DFACE                                          \
   GB_METHOD ("GetInvisibleEdge", "b", _3DFace_GetInvisibleEdge, "(index)i"),
+#define DWG_ENTITY_SPLINE                                                 \
+  GB_METHOD ("DeleteFitPoint", 0, Spline_DeleteFitPoint, "(index)i"),     \
+  GB_METHOD ("ElevateOrder", 0, Spline_ElevateOrder, "(order)i"),         \
+  GB_METHOD ("GetControlPoint", "o", Spline_GetControlPoint, "(index)i"), \
+  GB_METHOD ("GetFitPoint", "o", Spline_GetFitPoint, "(index)i"),
 
 #define DWG_ENTITY(token)                                \
   COMMON_ENTITY_PRE (token, token, #token),              \
@@ -969,6 +1027,7 @@ GB_DESC obj##_Desc[] =                                   \
 
 /3DFACE.GetInvisibleEdge
 3DSOLID.Boolean
+REGION.Boolean
 BLOCK.Bind
 BLOCK.Detach
 GROUP.AppendItems
@@ -986,7 +1045,6 @@ MULTILEADER.GetBlockAttributeValue32
 /LWPOLYLINE.GetBulge
 /POLYLINE_2D.GetBulge
 /POLYLINE_{3D,2D,MESH}.AppendVertex
-REGION.Boolean
 SECTION.GenerateSectionGeometry
 SORTENTSTABLE.Block
 SORTENTSTABLE.GetFullDrawOrder

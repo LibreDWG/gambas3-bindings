@@ -296,11 +296,19 @@ BEGIN_METHOD(Blk_AddLeader, GB_OBJECT points; GB_OBJECT annotation; GB_INTEGER t
   Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
   Dwg_Entity_LEADER *_obj;
   GB_ARRAY points = (GB_ARRAY)VARG(points);
-  CDwgObject* annotation = (CDwgObject*)VARG(annotation);
+  Dwg_Entity_MTEXT* annotation;
+  CDwgObject *annot = (CDwgObject *)VARG(annotation);
   int type = (int)VARG(type);
   int num = GB.Array.Count(points) / 3;
+  int error;
   dwg_point_3d *pts;
+  Dwg_Object *ann = annot ? dwg_ent_generic_to_object (annot->obj, &error) : NULL;
 
+  if (ann && ann->fixedtype != DWG_TYPE_MTEXT) {
+    GB.Error("Not an MTEXT &1", "annotation");
+    GB.ReturnVariant (NULL);
+    return;
+  }
   if (GB.Array.Count(points) % 3) { // needs to be dividable by 3
     GB.Error("Not array of 3DPoints &1", "points");
     GB.ReturnVariant (NULL);
@@ -312,7 +320,7 @@ BEGIN_METHOD(Blk_AddLeader, GB_OBJECT points; GB_OBJECT annotation; GB_INTEGER t
     pts[i].y = *(double*)GB.Array.Get (points, j++);
     pts[i].z = *(double*)GB.Array.Get (points, j++);
   }
-  _obj = dwg_add_LEADER (blkhdr, num, pts, annotation ? annotation->obj : NULL, type);
+  _obj = dwg_add_LEADER (blkhdr, num, pts, annotation, type);
   GB.ReturnObject (obj_generic_to_gb (_obj));
 END_METHOD
 
@@ -684,21 +692,19 @@ BEGIN_METHOD(Blk_AddXLine, GB_OBJECT pt1; GB_OBJECT pt2)
   GB.ReturnObject (obj_generic_to_gb (_obj));
 END_METHOD
 
-/* Not yet implemented 3DSOLID entities */
-
-// not yet. (origin)f[3](length)f(width)f(height)f
-BEGIN_METHOD(Blk_AddBox, GB_OBJECT origin; GB_FLOAT rotation;
-                         GB_FLOAT length; GB_FLOAT width; GB_FLOAT height)
+// (origin)f[3](length)f(width)f(height)f
+BEGIN_METHOD(Blk_AddBox, GB_OBJECT origin; GB_FLOAT length; GB_FLOAT width; GB_FLOAT height)
   Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
   Dwg_Entity_3DSOLID *_obj;
   dwg_point_3d origin;
-  double rotation = (double)VARG(rotation);
+  dwg_point_3d normal = (dwg_point_3d) { 0, 0, 1 };
+  //double rotation = (double)VARG(rotation);
   double length = (double)VARG(length);
   double width = (double)VARG(width);
   double height = (double)VARG(height);
   SET_PT1 (origin);
 #ifdef HAVE_DWG_ADD_BOX
-  _obj = dwg_add_BOX (blkhdr, &origin, rotation, length, width, height);
+  _obj = dwg_add_BOX (blkhdr, &origin, &normal, length, width, height);
   GB.ReturnObject (obj_generic_to_gb (_obj));
 #else
   GB.Error("Not yet implemented");
@@ -706,17 +712,17 @@ BEGIN_METHOD(Blk_AddBox, GB_OBJECT origin; GB_FLOAT rotation;
 #endif
 END_METHOD
 
-// not yet. (center)f[3](base_radius)f(height)f
-BEGIN_METHOD(Blk_AddCone, GB_OBJECT center; GB_FLOAT rotation; GB_FLOAT base_radius; GB_FLOAT height)
+// (center)f[3](base_radius)f(height)f
+BEGIN_METHOD(Blk_AddCone, GB_OBJECT center; GB_FLOAT base_radius; GB_FLOAT height)
   Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
   Dwg_Entity_3DSOLID *_obj;
   dwg_point_3d center;
-  double rotation = (double)VARG(rotation);
+  dwg_point_3d normal = (dwg_point_3d) { 0, 0, 1 };
   double base_radius = (double)VARG(base_radius);
   double height = (double)VARG(height);
   SET_PT1 (center);
 #ifdef HAVE_DWG_ADD_CONE
-  _obj = dwg_add_CONE (blkhdr, &center, rotation, base_radius, height);
+  _obj = dwg_add_CONE (blkhdr, &center, &normal, height, base_radius, 0.0, 0.0);
   GB.ReturnObject (obj_generic_to_gb (_obj));
 #else
   GB.Error("Not yet implemented");
@@ -729,11 +735,12 @@ BEGIN_METHOD(Blk_AddCylinder, GB_OBJECT center; GB_FLOAT radius;
   Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
   Dwg_Entity_3DSOLID *_obj;
   dwg_point_3d center;
+  dwg_point_3d normal = (dwg_point_3d) { 0, 0, 1 };
   double radius = (double)VARG(radius);
   double height = (double)VARG(height);
   SET_PT1 (center);
 #ifdef HAVE_DWG_ADD_CYLINDER
-  _obj = dwg_add_CYLINDER (blkhdr, &center, radius, height);
+  _obj = dwg_add_CYLINDER (blkhdr, &center, &normal, height, radius, radius, radius);
   GB.ReturnObject (obj_generic_to_gb (_obj));
 #else
   GB.Error("Not yet implemented");
@@ -741,59 +748,18 @@ BEGIN_METHOD(Blk_AddCylinder, GB_OBJECT center; GB_FLOAT radius;
 #endif
 END_METHOD
 
-// not yet. (center)f[3](base_radius)f(height)f
-BEGIN_METHOD(Blk_AddEllipticalCone, GB_OBJECT center; GB_FLOAT rotation; GB_FLOAT major_radius;
-                                    GB_FLOAT minor_radius; GB_FLOAT height)
+// (center)f[3](length)f(width)f(height)f
+BEGIN_METHOD(Blk_AddWedge, GB_OBJECT center; GB_FLOAT length; GB_FLOAT width; GB_FLOAT height)
   Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
   Dwg_Entity_3DSOLID *_obj;
   dwg_point_3d center;
-  double rotation = (double)VARG(rotation);
-  double major_radius = (double)VARG(major_radius);
-  double minor_radius = (double)VARG(minor_radius);
-  double height = (double)VARG(height);
-  SET_PT1 (center);
-#ifdef HAVE_DWG_ADD_ELLIPTICAL_CONE
-  _obj = dwg_add_ELLIPTICAL_CONE (blkhdr, &center, rotation, major_radius, minor_radius, height);
-  GB.ReturnObject (obj_generic_to_gb (_obj));
-#else
-  GB.Error("Not yet implemented");
-  GB.ReturnVariant (NULL);
-#endif
-END_METHOD
-
-// not yet. (center)f[3](major_radius)(major_radius)ff(height)f
-BEGIN_METHOD(Blk_AddEllipticalCylinder, GB_OBJECT center; GB_FLOAT rotation; GB_FLOAT major_radius;
-                                        GB_FLOAT minor_radius; GB_FLOAT height)
-  Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
-  Dwg_Entity_3DSOLID *_obj;
-  dwg_point_3d center;
-  double rotation = (double)VARG(rotation);
-  double major_radius = (double)VARG(major_radius);
-  double minor_radius = (double)VARG(minor_radius);
-  double height = (double)VARG(height);
-  SET_PT1 (center);
-#ifdef HAVE_DWG_ADD_ELLIPTICAL_CYLINDER
-  _obj = dwg_add_ELLIPTICAL_CYLINDER (blkhdr, &center, rotation, major_radius, minor_radius, height);
-  GB.ReturnObject (obj_generic_to_gb (_obj));
-#else
-  GB.Error("Not yet implemented");
-  GB.ReturnVariant (NULL);
-#endif
-END_METHOD
-
-// not yet. (center)f[3](length)f(width)f(height)f
-BEGIN_METHOD(Blk_AddWedge, GB_OBJECT center; GB_FLOAT rotation;
-                           GB_FLOAT length; GB_FLOAT width; GB_FLOAT height)
-  Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
-  Dwg_Entity_3DSOLID *_obj;
-  dwg_point_3d center;
-  double rotation = (double)VARG(rotation);
+  dwg_point_3d normal = (dwg_point_3d) { 0, 0, 1 };
   double length = (double)VARG(length);
   double width = (double)VARG(width);
   double height = (double)VARG(height);
   SET_PT1 (center);
 #ifdef HAVE_DWG_ADD_WEDGE
-  _obj = dwg_add_WEDGE (blkhdr, &center, rotation, length, width, height);
+  _obj = dwg_add_WEDGE (blkhdr, &center, &normal, length, width, height);
   GB.ReturnObject (obj_generic_to_gb (_obj));
 #else
   GB.Error("Not yet implemented");
@@ -801,16 +767,16 @@ BEGIN_METHOD(Blk_AddWedge, GB_OBJECT center; GB_FLOAT rotation;
 #endif
 END_METHOD
 
-/*GB_METHOD("AddSphere", "_3DSOLID;", Blk_AddSphere, "(Center)f[3](Radius)f"),*/ \
-// not yet. (Center)f[3](Radius)f
+// (Center)f[3](Radius)f
 BEGIN_METHOD(Blk_AddSphere, GB_OBJECT center; GB_FLOAT radius)
   Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
   Dwg_Entity_3DSOLID *_obj;
   dwg_point_3d center;
+  dwg_point_3d normal = (dwg_point_3d) { 0, 0, 1 };
   double radius = (double)VARG(radius);
   SET_PT1 (center);
 #ifdef HAVE_DWG_ADD_SPHERE
-  _obj = dwg_add_SPHERE (blkhdr, &center, radius);
+  _obj = dwg_add_SPHERE (blkhdr, &center, &normal, radius);
   GB.ReturnObject (obj_generic_to_gb (_obj));
 #else
   GB.Error("Not yet implemented");
@@ -823,11 +789,105 @@ BEGIN_METHOD(Blk_AddTorus, GB_OBJECT center; GB_FLOAT torus_radius; GB_FLOAT tub
   Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
   Dwg_Entity_3DSOLID *_obj;
   dwg_point_3d center;
+  dwg_point_3d normal = (dwg_point_3d) { 0, 0, 1 };
   double torus_radius = (double)VARG(torus_radius);
   double tube_radius = (double)VARG(tube_radius);
   SET_PT1 (center);
 #ifdef HAVE_DWG_ADD_TORUS
-  _obj = dwg_add_TORUS (blkhdr, &center, torus_radius, tube_radius);
+  _obj = dwg_add_TORUS (blkhdr, &center, &normal, torus_radius, tube_radius);
+  GB.ReturnObject (obj_generic_to_gb (_obj));
+#else
+  GB.Error("Not yet implemented");
+  GB.ReturnVariant (NULL);
+#endif
+END_METHOD
+
+/* Not yet implemented 3DSOLID entities */
+
+// not yet. (center)f[3](base_radius)f(height)f
+BEGIN_METHOD(Blk_AddEllipticalCone, GB_OBJECT center; GB_FLOAT major_radius;
+                                    GB_FLOAT minor_radius; GB_FLOAT height)
+  Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
+  Dwg_Entity_3DSOLID *_obj;
+  dwg_point_3d center;
+  dwg_point_3d normal = (dwg_point_3d) { 0, 0, 1 };
+  //double rotation = (double)VARG(rotation);
+  double major_radius = (double)VARG(major_radius);
+  double minor_radius = (double)VARG(minor_radius);
+  double height = (double)VARG(height);
+  SET_PT1 (center);
+#ifdef HAVE_DWG_ADD_ELLIPTICAL_CONE
+  _obj = dwg_add_ELLIPTICAL_CONE (blkhdr, &center, &normal, major_radius, minor_radius, height);
+  GB.ReturnObject (obj_generic_to_gb (_obj));
+#else
+  GB.Error("Not yet implemented");
+  GB.ReturnVariant (NULL);
+#endif
+END_METHOD
+
+// not yet. (Profile)o(axis_pt)f[3](axis_dir)f[3](angle)f
+BEGIN_METHOD(Blk_AddRevolvedSolid, GB_OBJECT profile; GB_OBJECT axis_pt; GB_OBJECT axis_dir;
+                                   GB_FLOAT angle)
+  Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
+  Dwg_Entity_3DSOLID *_obj;
+  dwg_point_3d axis_pt, axis_dir;
+  Dwg_Object *profile = (Dwg_Object *)VARG(profile);
+  double angle = (double)VARG(angle);
+  SET_PT1 (axis_pt);
+  SET_PT1 (axis_dir);
+#ifdef HAVE_DWG_ADD_REVOLVED_SOLID
+  _obj = dwg_add_REVOLVED_SOLID (blkhdr, &profile, &axis_pt, &axis_dir, angle);
+  GB.ReturnObject (obj_generic_to_gb (_obj));
+#else
+  GB.Error("Not yet implemented");
+  GB.ReturnVariant (NULL);
+#endif
+END_METHOD
+
+// not yet. (Profile)o(Height)f(TaperAngle)f
+BEGIN_METHOD(Blk_AddExtrudedSolid, GB_OBJECT profile; GB_FLOAT height; GB_FLOAT taper_angle)
+  Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
+  Dwg_Entity_3DSOLID *_obj;
+  Dwg_Object *profile = (Dwg_Object *)VARG(profile);
+  double height = (double)VARG(height);
+  double taper_angle = (double)VARG(taper_angle);
+#ifdef HAVE_DWG_ADD_EXTRUDED_SOLID
+  _obj = dwg_add_EXTRUDED_SOLID (blkhdr, &profile, height, angle);
+  GB.ReturnObject (obj_generic_to_gb (_obj));
+#else
+  GB.Error("Not yet implemented");
+  GB.ReturnVariant (NULL);
+#endif
+END_METHOD
+
+// not yet. (Profile)o(PathObj)o
+BEGIN_METHOD(Blk_AddExtrudedSolidAlongPath, GB_OBJECT profile; GB_OBJECT path_obj)
+  Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
+  Dwg_Entity_3DSOLID *_obj;
+  Dwg_Object *profile = (Dwg_Object *)VARG(profile);
+  Dwg_Object *path_obj = (Dwg_Object *)VARG(path_obj);
+#ifdef HAVE_DWG_ADD_EXTRUDED_PATH
+  _obj = dwg_add_EXTRUDED_PATH (blkhdr, &profile, &path_obj);
+  GB.ReturnObject (obj_generic_to_gb (_obj));
+#else
+  GB.Error("Not yet implemented");
+  GB.ReturnVariant (NULL);
+#endif
+END_METHOD
+
+// not yet. (center)f[3](major_radius)f(minor_radius)f(height)f
+BEGIN_METHOD(Blk_AddEllipticalCylinder, GB_OBJECT center; GB_FLOAT major_radius;
+                                        GB_FLOAT minor_radius; GB_FLOAT height)
+  Dwg_Object_BLOCK_HEADER *blkhdr = THIS->blkhdr;
+  Dwg_Entity_3DSOLID *_obj;
+  dwg_point_3d center;
+  dwg_point_3d normal = (dwg_point_3d) { 0, 0, 1 };
+  double major_radius = (double)VARG(major_radius);
+  double minor_radius = (double)VARG(minor_radius);
+  double height = (double)VARG(height);
+  SET_PT1 (center);
+#ifdef HAVE_DWG_ADD_ELLIPTICAL_CYLINDER
+  _obj = dwg_add_ELLIPTICAL_CYLINDER (blkhdr, &center, &normal, major_radius, minor_radius, height);
   GB.ReturnObject (obj_generic_to_gb (_obj));
 #else
   GB.Error("Not yet implemented");
@@ -900,12 +960,10 @@ GB_DESC token##_Desc[] =                                        \
     GB_METHOD("AddDimRadialLarge", "_DimRadialLarge;", Blk_AddDimRadialLarge, "(Center)f[3](ChordPoint)f[3](OverrideCenter)f[3](JogPoint)f[3](JogAngle)f"), \
     GB_METHOD("AddDimRotated", "_DimRotated;", Blk_AddDimRotated, "(XLine1Point)f[3](XLine2Point)f[3](DefPoint)f[3](RotationAngle)f"), \
     GB_METHOD("AddEllipse", "_Ellipse;", Blk_AddEllipse, "(Center)f[3](MajorAxis)f(RadiusRatio)f"), \
-    GB_METHOD("AddEllipticalCone", "_3DSolid;", Blk_AddEllipticalCone, "(Center)f[3](Rotation)f(MajorRadius)f(MinorRadius)f(Height)f"), \
+    GB_METHOD("AddEllipticalCone", "_3DSolid;", Blk_AddEllipticalCone, "(Center)f[3](MajorRadius)f(MinorRadius)f(Height)f"), \
     GB_METHOD("AddEllipticalCylinder", "_3DSolid;", Blk_AddEllipticalCylinder, "(Center)f[3](MajorRadius)f(MinorRadius)f(Height)f"), \
-    /*                                                                  \
     GB_METHOD("AddExtrudedSolid", "_3DSolid;", Blk_AddExtrudedSolid, "(Profile)o(Height)f(TaperAngle)f"), \
     GB_METHOD("AddExtrudedSolidAlongPath", "_3DSolid;", Blk_AddExtrudedSolidAlongPath, "(Profile)o(PathObj)o"), \
-    */                                                                     \
     GB_METHOD("AddHatch", "_Hatch;", Blk_AddHatch, "(PatternType)i(PatternName)s(Associativity)b(PathObjects)o[]"), \
     GB_METHOD("AddLeader", "_Leader;", Blk_AddLeader, "(Points)f[](Annotation)o(Type)i"), \
     GB_METHOD("AddLightWeightPolyline", "_LightWeightPolyline;", Blk_AddLightWeightPolyline, \
@@ -923,9 +981,9 @@ GB_DESC token##_Desc[] =                                        \
     GB_METHOD("AddRasterImage", "_RasterImage;", Blk_AddRasterImage, \
               "(FileName)s(InsPt)f[3](Scalefactor)f(RotationAngle)f"),  \
     GB_METHOD("AddRay", "_Ray;", Blk_AddRay, "(Point1)f[3](Point2)f[3]"),  \
-    /*                                                               \
     GB_METHOD("AddRevolvedSolid", "_3DSolid;", Blk_AddRevolvedSolid, \
               "(Profile)o(axis_pt)f[3](axis_dir)f[3](angle)f"),      \
+    /*                                                               \
     GB_METHOD("AddSection", "_Section;", Blk_AddSection, "(FromPoint)f[3](ToPoint)f[3](PlaneVector)f[3]"), */ \
     GB_METHOD("AddShape", "_Shape;", Blk_AddShape, "(Name)s(ins_pt)f[3](scale_factor)f(oblique_angle)f"), \
     GB_METHOD("AddSolid", "_Solid;", Blk_AddSolid, "(pt1)f[3](pt2)f[3](pt3)f[3](pt4)f[3]"), \
